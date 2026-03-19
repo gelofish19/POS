@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern POS Draft</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section id="login-screen" class="glass-panel login-screen">
+      <p class="draft-tag">DRAFT v1</p>
+      <h1>Modern POS</h1>
+      <p class="subtitle">Multi-staff login. Local-only mode.</p>
+      <form id="login-form" class="grid-form">
+        <label for="staff-select">Staff</label>
+        <select id="staff-select" required></select>
+        <label for="staff-pin">PIN</label>
+        <input id="staff-pin" inputmode="numeric" minlength="4" maxlength="12" required>
+        <button type="submit" class="btn primary">Login</button>
+        <p id="login-error" class="inline-note error" aria-live="polite"></p>
+      </form>
+      <p class="inline-note">Default staff: admin / 1234, cashier1 / 1234</p>
+    </section>
+
+    <section id="dashboard-screen" class="dashboard-shell hidden">
+      <div class="tablet-frame">
+        <header class="dash-top">
+          <span class="pill">NP</span>
+          <div class="staff-chip">
+            <span id="active-staff-name">Staff</span>
+            <small id="active-staff-role">Cashier</small>
+          </div>
+        </header>
+        <p id="dash-date" class="dash-date"></p>
+        <h2 id="dash-time" class="dash-time"></h2>
+        <input id="dash-search" class="dash-search" type="search" placeholder="Looking for something? Start here">
+        <section id="dashboard-tiles" class="tile-grid">
+          <button class="tile" data-action="register">Register</button>
+          <button class="tile" data-action="reports">Reports</button>
+          <button class="tile" data-action="transactions">Transactions</button>
+          <button class="tile" data-action="terminal">Terminal</button>
+          <button class="tile" data-action="settlement">Settlement</button>
+          <button class="tile" data-action="manual">Manual Entry</button>
+          <button class="tile" data-action="catalog">Catalog</button>
+          <button class="tile" data-action="invoicing">Invoicing</button>
+          <button class="tile" data-action="orders">Orders</button>
+          <button class="tile" data-action="help">Help</button>
+        </section>
+      </div>
+    </section>
+
+    <section id="register-screen" class="register-screen hidden">
+      <header class="register-head glass-panel">
+        <div class="register-head-main">
+          <h2>Register</h2>
+          <div class="register-head-links">
+            <button id="new-sale" type="button" class="text-action">New Sale</button>
+            <button id="manage-services" type="button" class="text-action">Services Management</button>
+            <div class="register-links-separator" aria-hidden="true"></div>
+            <button id="cash-movement" type="button" class="text-action">Cash In / Cash Out</button>
+          </div>
+        </div>
+        <div class="head-actions">
+          <button id="go-dashboard" class="btn ghost">Dashboard</button>
+          <button id="logout-btn" class="btn ghost">Logout</button>
+        </div>
+      </header>
+
+      <section class="register-body">
+        <aside class="glass-panel catalog-pane">
+          <div class="pane-head">
+            <h3>Services</h3>
+            <button id="services-back" type="button" class="btn ghost small">Back</button>
+          </div>
+          <div class="service-filters hidden">
+            <select id="service-category-filter">
+              <option value="">Select category</option>
+            </select>
+            <select id="service-subcategory-filter" disabled>
+              <option value="">Select subcategory</option>
+            </select>
+            <select id="service-subsubcategory-filter" disabled>
+              <option value="">Select child subcategory</option>
+            </select>
+          </div>
+          <div id="service-breadcrumb" class="service-breadcrumb"></div>
+          <div id="service-category-box" class="list-box service-picker-box">
+            <div id="service-category-list" class="simple-list"></div>
+          </div>
+          <div id="service-subcategory-box" class="list-box service-picker-box hidden">
+            <div id="service-subcategory-list" class="simple-list"></div>
+          </div>
+          <div id="service-subsubcategory-box" class="list-box service-picker-box hidden">
+            <div id="service-subsubcategory-list" class="simple-list"></div>
+          </div>
+          <div id="service-chips" class="service-grid"></div>
+        </aside>
+
+        <section class="glass-panel sale-pane">
+          <div class="pane-head">
+            <h3>Current Sale</h3>
+          </div>
+          <div class="sale-summary">
+            <div class="sale-summary-card">
+              <label>Total Quantity</label>
+              <strong id="sale-total-qty">0 item(s)</strong>
+            </div>
+            <div class="sale-summary-card">
+              <label>Total Amount</label>
+              <strong id="sale-total-amount">PHP 0.00</strong>
+            </div>
+            <button id="open-checkout" type="button" class="btn primary sale-checkout-btn">Checkout</button>
+          </div>
+          <div class="sale-table-wrap">
+            <table>
+              <colgroup>
+                <col>
+                <col class="qty-col">
+                <col class="price-col">
+                <col class="total-col">
+                <col class="action-col">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th class="num-col">Qty</th>
+                  <th class="num-col">Price</th>
+                  <th class="num-col">Total</th>
+                  <th class="action-col"></th>
+                </tr>
+              </thead>
+              <tbody id="sale-body">
+                <tr><td colspan="5" class="muted-cell">No items in cart.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside id="checkout-pane" class="glass-panel checkout-pane popup hidden">
+          <div class="pane-head checkout-top">
+            <h3>Checkout</h3>
+            <button id="close-checkout" type="button" class="btn ghost small">Close</button>
+          </div>
+          <div class="field total-field">
+            <label>Total Due</label>
+            <strong id="grand-total">PHP 0.00</strong>
+          </div>
+          <div class="field total-field">
+            <label>Total Quantity</label>
+            <strong id="grand-qty">0 item(s)</strong>
+          </div>
+          <div class="field total-field">
+            <label>Total Change</label>
+            <strong id="total-change">PHP 0.00</strong>
+          </div>
+          <div id="cash-block" class="field cash-field">
+            <label>Cash Received</label>
+            <input id="cash-received" type="number" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div id="reference-block" class="field hidden">
+            <label>Reference Number</label>
+            <input id="payment-reference" type="text" placeholder="Enter reference no.">
+          </div>
+          <div class="field payment-field">
+            <label>Payment Method</label>
+            <select id="payment-methods">
+              <option value="cash">Cash</option>
+              <option value="gcash">GCash</option>
+              <option value="bank">Bank Transfer</option>
+            </select>
+          </div>
+          <div class="field row-actions action-field">
+            <button id="complete-sale" type="button" class="btn primary complete-sale-btn">Complete Sale</button>
+          </div>
+          <p id="checkout-error" class="inline-note error" aria-live="polite"></p>
+        </aside>
+      </section>
+      <div id="checkout-overlay" class="checkout-overlay hidden" aria-hidden="true"></div>
+    </section>
+  </main>
+
+  <dialog id="services-dialog" class="modal">
+    <form method="dialog" class="glass-panel modal-card">
+      <div class="services-admin-top">
+        <h3>Services Management</h3>
+        <div class="services-admin-top-actions">
+          <div class="services-admin-action-box">
+            <button id="services-admin-action-add" class="btn ghost small" type="button">Add</button>
+            <button id="services-admin-action-edit" class="btn ghost small" type="button">Edit</button>
+            <button id="services-admin-action-delete" class="btn ghost small" type="button">Delete</button>
+            <button id="services-admin-action-transfer" class="btn ghost small" type="button">Transfer</button>
+            <button id="services-admin-action-toggle" class="btn ghost small" type="button">Enable/Disable</button>
+            <button id="services-admin-select-all" class="btn ghost small" type="button">Select</button>
+            <span id="services-admin-selected-count" class="services-admin-selected-count">Selected: 0</span>
+            <button id="services-admin-back" class="btn ghost small" type="button">Back</button>
+          </div>
+        </div>
+      </div>
+      <div id="admin-breadcrumb" class="admin-breadcrumb"></div>
+      <div id="section-categories" class="manage-section">
+        <div class="list-box">
+          <div id="category-list" class="simple-list"></div>
+        </div>
+      </div>
+
+      <div id="section-subcategories" class="manage-section hidden">
+        <div class="list-box">
+          <div id="subcategory-list" class="simple-list"></div>
+        </div>
+      </div>
+
+      <div id="section-subsubcategories" class="manage-section hidden">
+        <div class="list-box">
+          <div id="subsubcategory-list" class="simple-list"></div>
+        </div>
+      </div>
+
+      <div id="section-services" class="manage-section services-section hidden">
+        <h4 class="manage-title services-manage-title">Services</h4>
+        <div class="admin-add-panel">
+          <div class="admin-new">
+            <input id="new-service-category" type="text" placeholder="Category">
+            <input id="new-service-subcategory" type="text" placeholder="Subcategory">
+            <input id="new-service-name" type="text" placeholder="Service name">
+            <input id="new-service-price" type="number" min="1" step="0.01" placeholder="Price">
+            <button id="add-service" class="btn ghost" type="button">Add</button>
+          </div>
+        </div>
+        <div class="admin-filter">
+          <select id="admin-filter-category">
+            <option value="">Select category first</option>
+          </select>
+          <select id="admin-filter-subcategory" disabled>
+            <option value="">Select subcategory</option>
+          </select>
+          <select id="admin-filter-subsubcategory" disabled>
+            <option value="">Select child subcategory</option>
+          </select>
+        </div>
+        <div class="admin-list-head" aria-hidden="true">
+          <span>Category</span>
+          <span>Subcategory</span>
+          <span>Service</span>
+          <span>Price</span>
+          <span>Action</span>
+        </div>
+        <div id="services-admin-list" class="admin-list"></div>
+      </div>
+
+      <p id="services-admin-error" class="inline-note error"></p>
+      <div class="row-actions modal-actions">
+        <button class="btn primary" type="submit">Done</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirm-sale-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3>Confirm Sale</h3>
+      <p id="confirm-sale-text" class="subtitle">Proceed with this sale?</p>
+      <div class="row-actions modal-actions">
+        <button id="confirm-sale-no" type="button" class="btn ghost">Cancel</button>
+        <button id="confirm-sale-yes" type="button" class="btn primary">Confirm</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="sale-result-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3>Sale Complete</h3>
+      <p id="sale-result-text" class="subtitle">Sale completed.</p>
+      <div class="row-actions modal-actions">
+        <button id="sale-result-ok" type="button" class="btn primary">OK</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="name-edit-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3 id="name-edit-title">Edit Name</h3>
+      <label for="name-edit-input" id="name-edit-label">Name</label>
+      <input id="name-edit-input" type="text" placeholder="Enter name">
+      <div class="row-actions modal-actions">
+        <button id="name-edit-cancel" type="button" class="btn ghost">Cancel</button>
+        <button id="name-edit-save" type="button" class="btn primary">Save</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="confirm-action-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3 id="confirm-action-title">Confirm Action</h3>
+      <p id="confirm-action-text" class="subtitle">Are you sure?</p>
+      <div class="row-actions modal-actions">
+        <button id="confirm-action-cancel" type="button" class="btn ghost">Cancel</button>
+        <button id="confirm-action-ok" type="button" class="btn primary">Confirm</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="toggle-mode-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3>Enable/Disable</h3>
+      <p class="subtitle">Choose an action.</p>
+      <div class="toggle-mode-grid">
+        <button id="toggle-mode-enable" type="button" class="btn ghost">Enable</button>
+        <button id="toggle-mode-disable" type="button" class="btn ghost">Disable</button>
+        <button id="toggle-mode-enable-all" type="button" class="btn ghost">Enable All</button>
+        <button id="toggle-mode-disable-all" type="button" class="btn ghost">Disable All</button>
+      </div>
+      <div class="row-actions modal-actions">
+        <button id="toggle-mode-cancel" type="button" class="btn primary">Cancel</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="cash-movement-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3>Cash In / Cash Out</h3>
+      <p class="subtitle">Choose cash movement type.</p>
+      <div class="cash-movement-choice-grid">
+        <button id="cash-movement-in" type="button" class="btn ghost">Cash In</button>
+        <button id="cash-movement-out" type="button" class="btn ghost">Cash Out</button>
+      </div>
+      <div class="cash-movement-actions">
+        <button id="cash-movement-cancel" type="button" class="btn primary">Cancel</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="service-edit-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3>Edit Service</h3>
+      <label for="service-edit-name">Service name</label>
+      <input id="service-edit-name" type="text" placeholder="Service name">
+      <label for="service-edit-price">Price</label>
+      <input id="service-edit-price" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+      <label for="service-edit-price-mode">Pricing mode</label>
+      <select id="service-edit-price-mode">
+        <option value="fixed">Fixed Price</option>
+        <option value="ask">Manual Price</option>
+      </select>
+      <div class="row-actions modal-actions">
+        <button id="service-edit-cancel" type="button" class="btn ghost">Cancel</button>
+        <button id="service-edit-save" type="button" class="btn primary">Save</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="service-amount-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3>Enter Amount</h3>
+      <p id="service-amount-name" class="subtitle"></p>
+      <label for="service-amount-input">Amount</label>
+      <input id="service-amount-input" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+      <div class="row-actions modal-actions">
+        <button id="service-amount-cancel" type="button" class="btn ghost">Cancel</button>
+        <button id="service-amount-save" type="button" class="btn primary">Add</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="subcategory-transfer-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3>Transfer Subcategory</h3>
+      <label for="subcategory-transfer-category">Target category</label>
+      <select id="subcategory-transfer-category"></select>
+      <label for="subcategory-transfer-name">Target subcategory name</label>
+      <input id="subcategory-transfer-name" type="text" placeholder="Subcategory name">
+      <div class="row-actions modal-actions">
+        <button id="subcategory-transfer-cancel" type="button" class="btn ghost">Cancel</button>
+        <button id="subcategory-transfer-save" type="button" class="btn primary">Transfer</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="service-transfer-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3>Transfer Service</h3>
+      <label for="service-transfer-category">Target category</label>
+      <select id="service-transfer-category"></select>
+      <label for="service-transfer-subcategory">Target subcategory</label>
+      <select id="service-transfer-subcategory"></select>
+      <div class="row-actions modal-actions">
+        <button id="service-transfer-cancel" type="button" class="btn ghost">Cancel</button>
+        <button id="service-transfer-save" type="button" class="btn primary">Transfer</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="reports-dialog" class="modal">
+    <div class="glass-panel modal-card reports-card">
+      <div class="reports-top">
+        <h3>Reports</h3>
+        <p id="reports-last-updated" class="inline-note last-updated-note">Last updated: --:--:--</p>
+        <div class="reports-filters">
+          <div class="field range-field">
+            <label for="reports-range-picker">Date range</label>
+            <div class="reports-range-box">
+              <button id="reports-range-open" type="button" class="reports-range-main" aria-label="Choose reports date range">
+                <span id="reports-range-main-text">-</span>
+                <span class="reports-range-cal" aria-hidden="true">&#128197;</span>
+              </button>
+              <input id="reports-range-picker" type="date" aria-label="Reports date range picker">
+            </div>
+          </div>
+          <div class="field export-field">
+            <label for="reports-export-type">Export</label>
+            <select id="reports-export-type">
+              <option value="" selected>Choose One</option>
+              <option value="csv">CSV</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+          <div class="field print-field">
+            <label for="reports-print-summary">Print</label>
+            <button id="reports-print-summary" type="button" class="btn ghost small">Print</button>
+          </div>
+          <div class="field close-field">
+            <label for="reports-close">Close</label>
+            <button id="reports-close" type="button" class="btn primary small">Close</button>
+          </div>
+        </div>
+      </div>
+      <p id="reports-error" class="inline-note error"></p>
+      <div class="reports-summary-grid">
+        <div class="sale-summary-card">
+          <label>Total Sales</label>
+          <strong id="reports-total-sales">PHP 0.00</strong>
+        </div>
+        <div class="sale-summary-card">
+          <label>Transactions</label>
+          <strong id="reports-transaction-count">0 transaction(s)</strong>
+        </div>
+        <div class="sale-summary-card">
+          <label>Cash In</label>
+          <strong id="reports-cash-in-total">PHP 0.00</strong>
+        </div>
+        <div class="sale-summary-card">
+          <label>Cash Out</label>
+          <strong id="reports-cash-out-total">PHP 0.00</strong>
+        </div>
+        <div class="sale-summary-card">
+          <label>Net Cash Movement</label>
+          <strong id="reports-net-cash">PHP 0.00</strong>
+        </div>
+      </div>
+      <div class="reports-grid">
+        <section class="list-box reports-panel">
+          <h4>Sales by Service</h4>
+          <div class="sale-table-wrap reports-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th class="num-col">Qty</th>
+                  <th class="num-col">Sales</th>
+                </tr>
+              </thead>
+              <tbody id="reports-service-body"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="list-box reports-panel">
+          <h4>Top Services</h4>
+          <div class="sale-table-wrap reports-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Service</th>
+                  <th class="num-col">Sales</th>
+                </tr>
+              </thead>
+              <tbody id="reports-top-body"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="list-box reports-panel">
+          <h4>Payment Breakdown</h4>
+          <div class="sale-table-wrap reports-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Payment</th>
+                  <th class="num-col">Tx Count</th>
+                  <th class="num-col">Sales</th>
+                </tr>
+              </thead>
+              <tbody id="reports-payment-body"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="list-box reports-panel">
+          <h4>Cash In / Out Log</h4>
+          <div class="sale-table-wrap reports-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date/Time</th>
+                  <th>Type</th>
+                  <th class="num-col">Amount</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody id="reports-cash-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="transactions-dialog" class="modal">
+    <div class="glass-panel modal-card reports-card transactions-card">
+      <div class="reports-top">
+        <h3>Transactions</h3>
+        <p id="transactions-last-updated" class="inline-note last-updated-note">Last updated: --:--:--</p>
+        <div class="reports-filters">
+          <div class="field ref-field">
+            <label for="transactions-reference-search">Reference #</label>
+            <input id="transactions-reference-search" type="search" placeholder="Search reference">
+          </div>
+          <div class="field range-field">
+            <label for="transactions-range-picker">Date range</label>
+            <div class="transactions-range-box">
+              <button id="transactions-range-open" type="button" class="transactions-range-main" aria-label="Choose date range">
+                <span id="transactions-range-main-text">-</span>
+                <span class="transactions-range-cal" aria-hidden="true">&#128197;</span>
+              </button>
+              <input id="transactions-range-picker" type="date" aria-label="Date range picker">
+            </div>
+          </div>
+          <div class="field payment-field">
+            <label for="transactions-payment-filter">Payment</label>
+            <select id="transactions-payment-filter">
+              <option value="">All payments</option>
+              <option value="Cash">Cash</option>
+              <option value="GCash">GCash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Card">Card</option>
+            </select>
+          </div>
+          <div class="field export-field">
+            <label for="transactions-export-type">Export</label>
+            <select id="transactions-export-type">
+              <option value="" selected>Choose One</option>
+              <option value="csv">CSV</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+          <div class="field print-field">
+            <label for="transactions-print">Print</label>
+            <button id="transactions-print" type="button" class="btn ghost small">Print</button>
+          </div>
+        </div>
+      </div>
+      <p id="transactions-error" class="inline-note error"></p>
+      <section class="list-box reports-panel reports-panel-wide transactions-panel">
+        <div class="transactions-panel-head">
+          <h4>Sales Logs</h4>
+        </div>
+        <div class="sale-table-wrap reports-table-wrap reports-transactions-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="sel-col">
+                  <input id="transactions-select-all" type="checkbox" aria-label="Select all logs on page">
+                </th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Staff</th>
+                <th>Payment</th>
+                <th class="num-col">Total Qty</th>
+                <th class="num-col">Total Sale</th>
+              </tr>
+            </thead>
+            <tbody id="transactions-body"></tbody>
+          </table>
+        </div>
+        <div class="transactions-table-footer">
+          <div class="transactions-footer-left">
+            <div class="field select-action-field">
+              <button id="transactions-select-trigger" type="button" class="btn ghost small">Select</button>
+              <div id="transactions-select-menu" class="select-dropup" hidden>
+                <button type="button" class="select-dropup-item" data-action="restore">Restore</button>
+                <button type="button" class="select-dropup-item" data-action="delete">Delete</button>
+                <button type="button" class="select-dropup-item" data-action="cancel">Cancel</button>
+              </div>
+              <select id="transactions-select-action" aria-label="Selection actions" class="visually-hidden">
+                <option value="">Select</option>
+                <option value="restore">Restore</option>
+                <option value="delete">Delete</option>
+                <option value="cancel">Cancel</option>
+              </select>
+            </div>
+            <div id="transactions-selected-count" class="inline-note">0 selected</div>
+          </div>
+          <div class="transactions-pager">
+            <label for="transactions-page-size" class="inline-note">Show</label>
+            <select id="transactions-page-size" aria-label="Transactions per page">
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+            <button id="transactions-prev" type="button" class="btn ghost small">Prev</button>
+            <span id="transactions-page-label" class="inline-note">Page 1 of 1</span>
+            <button id="transactions-next" type="button" class="btn ghost small">Next</button>
+            <button id="transactions-close" type="button" class="btn primary small">Close</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="transaction-items-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card transaction-items-card">
+      <h3 id="transaction-items-title">Purchased Services</h3>
+      <div class="transaction-details-box">
+        <div class="transaction-details-grid">
+          <p class="inline-note"><strong>Date:</strong> <span id="tx-detail-date">-</span></p>
+          <p class="inline-note"><strong>Time:</strong> <span id="tx-detail-time">-</span></p>
+          <p class="inline-note"><strong>Staff:</strong> <span id="tx-detail-staff">-</span></p>
+          <p class="inline-note"><strong>Payment:</strong> <span id="tx-detail-payment">-</span></p>
+          <p class="inline-note"><strong>Reference #:</strong> <span id="tx-detail-reference">-</span></p>
+          <p class="inline-note"><strong>Total Qty:</strong> <span id="tx-detail-qty">0</span></p>
+          <p class="inline-note"><strong>Change:</strong> <span id="tx-detail-change">-</span></p>
+          <p class="inline-note"><strong>Total Sale:</strong> <span id="tx-detail-total">₱0.00</span></p>
+        </div>
+      </div>
+      <div class="sale-table-wrap transaction-items-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th class="num-col">Qty</th>
+              <th class="num-col">Price</th>
+              <th class="num-col">Line Total</th>
+            </tr>
+          </thead>
+          <tbody id="transaction-items-body"></tbody>
+        </table>
+      </div>
+      <div class="row-actions modal-actions">
+        <button id="transaction-items-close" type="button" class="btn primary">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="date-range-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card date-range-card">
+      <div class="date-range-head">
+        <div class="date-range-presets">
+          <button id="date-range-preset-today" type="button" class="btn ghost small">Today</button>
+          <button id="date-range-preset-yesterday" type="button" class="btn ghost small">Yesterday</button>
+          <button id="date-range-preset-last7" type="button" class="btn ghost small">Last 7 Days</button>
+          <button id="date-range-preset-month" type="button" class="btn ghost small">This Month</button>
+        </div>
+        <div class="date-range-nav">
+          <button id="date-range-prev" type="button" class="btn ghost small" aria-label="Previous month">‹</button>
+          <button id="date-range-next" type="button" class="btn ghost small" aria-label="Next month">›</button>
+        </div>
+      </div>
+      <div class="date-range-meta">
+        <div class="date-range-month" id="date-range-month-label">-</div>
+      </div>
+      <div class="date-range-inline-row">
+        <div id="date-range-preview" class="inline-note">-</div>
+      </div>
+      <div class="date-range-weekdays">
+        <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+      </div>
+      <div id="date-range-grid" class="date-range-grid"></div>
+      <div class="row-actions modal-actions">
+        <button id="date-range-apply" type="button" class="btn primary small">Apply</button>
+        <button id="date-range-cancel" type="button" class="btn ghost small">Cancel</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>
