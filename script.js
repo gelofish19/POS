@@ -3409,7 +3409,6 @@ dashboardTiles.addEventListener("click", async (e) => {
     setScreen("register");
     checkoutError.textContent = "";
     await refreshServices();
-    await ensurePrintCatalogFromClient();
     renderCart();
     await refreshSummary();
     return;
@@ -3417,7 +3416,6 @@ dashboardTiles.addEventListener("click", async (e) => {
   if (b.dataset.action === "catalog") {
     setScreen("register");
     await refreshServices();
-    await ensurePrintCatalogFromClient();
     renderCart();
     renderServiceAdmin();
     servicesDialog.showModal();
@@ -4437,6 +4435,9 @@ if (servicesAdminActionAddBtn) {
       }
       if (adminStep === 4) {
         await addServiceFromBox();
+        await refreshServices();
+        renderServiceAdmin();
+        showToast("Service added.");
       }
     } catch (error) {
       servicesAdminError.textContent = error.message;
@@ -4469,6 +4470,9 @@ if (servicesAdminActionEditBtn) {
         const row = selectedServiceRowElement();
         if (!row) return;
         await editServiceFromBox(row);
+        await refreshServices();
+        renderServiceAdmin();
+        showToast("Service updated.");
       }
     } catch (error) {
       servicesAdminError.textContent = error.message;
