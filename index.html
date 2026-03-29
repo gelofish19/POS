@@ -23,15 +23,81 @@
       <p class="inline-note">Default staff: admin / 1234, cashier1 / 1234</p>
     </section>
 
-    <section id="dashboard-screen" class="dashboard-shell hidden">
-      <div class="tablet-frame">
-        <header class="dash-top">
-          <span class="pill">NP</span>
-          <div class="staff-chip">
-            <span id="active-staff-name">Staff</span>
-            <small id="active-staff-role">Cashier</small>
+    <section id="app-layout" class="app-layout hidden">
+      <button id="app-backdrop" class="app-backdrop hidden" type="button" aria-label="Close sidebar"></button>
+      <aside id="app-sidebar" class="glass-panel app-sidebar" aria-label="Main navigation">
+        <div class="sidebar-head">
+          <div class="sidebar-brand">
+            <span class="sidebar-brand-mark">NP</span>
+            <span class="sidebar-brand-text">Modern POS</span>
+          </div>
+          <button id="sidebar-collapse-toggle" class="sidebar-icon-btn" type="button" aria-label="Collapse sidebar">
+            <span aria-hidden="true">&larr;</span>
+          </button>
+        </div>
+        <nav class="sidebar-nav">
+          <button class="sidebar-nav-item active" type="button" data-route="dashboard">
+            <span class="sidebar-nav-icon">DB</span>
+            <span class="sidebar-nav-label">Dashboard</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" data-route="register">
+            <span class="sidebar-nav-icon">RG</span>
+            <span class="sidebar-nav-label">Register</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" data-route="inventory">
+            <span class="sidebar-nav-icon">IN</span>
+            <span class="sidebar-nav-label">Inventory</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" data-route="services">
+            <span class="sidebar-nav-icon">SV</span>
+            <span class="sidebar-nav-label">Services</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" data-route="reports">
+            <span class="sidebar-nav-icon">RP</span>
+            <span class="sidebar-nav-label">Reports</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" data-route="transactions">
+            <span class="sidebar-nav-icon">TX</span>
+            <span class="sidebar-nav-label">Transactions</span>
+          </button>
+          <button class="sidebar-nav-item" type="button" data-route="settings">
+            <span class="sidebar-nav-icon">ST</span>
+            <span class="sidebar-nav-label">Settings</span>
+          </button>
+        </nav>
+        <button class="sidebar-nav-item sidebar-nav-item-logout" type="button" data-route="logout">
+          <span class="sidebar-nav-icon">LO</span>
+          <span class="sidebar-nav-label">Logout</span>
+        </button>
+      </aside>
+
+      <div class="app-main">
+        <header class="glass-panel app-header">
+          <div class="app-header-left">
+            <button id="sidebar-toggle" class="sidebar-icon-btn" type="button" aria-label="Toggle sidebar">
+              <span aria-hidden="true">&#9776;</span>
+            </button>
+            <div class="header-screen-meta">
+              <small id="header-screen-kicker">POS</small>
+              <h2 id="header-screen-title">Dashboard</h2>
+            </div>
+          </div>
+          <div class="app-header-right">
+            <div class="header-quick-actions">
+              <button id="cash-movement" type="button" class="btn ghost small">Cash In / Out</button>
+              <button id="go-dashboard" class="btn ghost small">Dashboard</button>
+            </div>
+            <div class="staff-chip header-staff-chip">
+              <span id="active-staff-name">Staff</span>
+              <small id="active-staff-role">Cashier</small>
+            </div>
+            <button id="logout-btn" class="btn ghost small">Logout</button>
           </div>
         </header>
+
+        <section class="app-content">
+    <section id="dashboard-screen" class="dashboard-shell app-screen hidden">
+      <div class="tablet-frame">
         <p id="dash-date" class="dash-date"></p>
         <h2 id="dash-time" class="dash-time"></h2>
         <input id="dash-search" class="dash-search" type="search" placeholder="Looking for something? Start here">
@@ -51,20 +117,14 @@
       </div>
     </section>
 
-    <section id="register-screen" class="register-screen hidden">
+    <section id="register-screen" class="register-screen app-screen hidden">
       <header class="register-head glass-panel">
         <div class="register-head-main">
           <h2>Register</h2>
           <div class="register-head-links">
             <button id="new-sale" type="button" class="text-action">New Sale</button>
             <button id="manage-services" type="button" class="text-action">Services Management</button>
-            <div class="register-links-separator" aria-hidden="true"></div>
-            <button id="cash-movement" type="button" class="text-action">Cash In / Cash Out</button>
           </div>
-        </div>
-        <div class="head-actions">
-          <button id="go-dashboard" class="btn ghost">Dashboard</button>
-          <button id="logout-btn" class="btn ghost">Logout</button>
         </div>
       </header>
 
@@ -180,16 +240,7 @@
       <div id="checkout-overlay" class="checkout-overlay hidden" aria-hidden="true"></div>
     </section>
 
-    <section id="inventory-screen" class="inventory-screen hidden">
-      <aside class="glass-panel inventory-sidebar">
-        <h3>Inventory</h3>
-        <button id="inventory-side-dashboard" type="button" class="btn ghost small">Dashboard</button>
-        <button id="inventory-side-register" type="button" class="btn ghost small">Register</button>
-        <button id="inventory-side-reports" type="button" class="btn ghost small">Reports</button>
-        <button id="inventory-side-transactions" type="button" class="btn ghost small">Transactions</button>
-        <button id="inventory-side-logout" type="button" class="btn ghost small">Logout</button>
-      </aside>
-
+    <section id="inventory-screen" class="inventory-screen app-screen hidden">
       <section class="glass-panel inventory-main">
         <div class="inventory-main-head">
           <h2>Inventory</h2>
@@ -299,6 +350,9 @@
           </div>
         </section>
       </section>
+    </section>
+        </section>
+      </div>
     </section>
   </main>
 

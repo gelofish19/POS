@@ -10,6 +10,8 @@ const CATEGORY_STATUS_KEY = "pos_category_status_v1";
 const SUBCATEGORY_STATUS_KEY = "pos_subcategory_status_v1";
 const SUBSUBCATEGORY_OVERRIDES_KEY = "pos_subsubcategory_overrides_v1";
 const DELETED_SERVICE_IDS_KEY = "pos_deleted_service_ids_v1";
+const SIDEBAR_COLLAPSED_KEY = "pos_sidebar_collapsed";
+const MOBILE_SIDEBAR_BREAKPOINT = 1100;
 
 const state = {
   staff: [],
@@ -27,6 +29,8 @@ const state = {
   deletedServiceIds: {},
   reports: null,
   transactionsView: [],
+  currentScreen: "login",
+  activeNavRoute: "dashboard",
   inventory: {
     items: [],
     selectedIds: {},
@@ -40,6 +44,14 @@ const state = {
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 const appShell = document.querySelector(".app-shell");
+const appLayout = document.getElementById("app-layout");
+const appSidebar = document.getElementById("app-sidebar");
+const appBackdrop = document.getElementById("app-backdrop");
+const sidebarToggle = document.getElementById("sidebar-toggle");
+const sidebarCollapseToggle = document.getElementById("sidebar-collapse-toggle");
+const headerScreenKicker = document.getElementById("header-screen-kicker");
+const headerScreenTitle = document.getElementById("header-screen-title");
+const sidebarNavItems = Array.from(document.querySelectorAll(".sidebar-nav-item[data-route]"));
 
 const loginScreen = document.getElementById("login-screen");
 const dashboardScreen = document.getElementById("dashboard-screen");
@@ -937,12 +949,71 @@ function renderStaffSelect() {
     .join("");
 }
 
+function isMobileSidebarViewport() {
+  return window.innerWidth <= MOBILE_SIDEBAR_BREAKPOINT;
+}
+
+function setSidebarDrawerOpen(open) {
+  appShell?.classList.toggle("sidebar-drawer-open", Boolean(open));
+  if (appBackdrop) appBackdrop.classList.toggle("hidden", !open);
+}
+
+function loadSidebarCollapsed() {
+  try {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setSidebarCollapsed(collapsed, persist = true) {
+  appShell?.classList.toggle("sidebar-collapsed", Boolean(collapsed));
+  if (sidebarCollapseToggle) sidebarCollapseToggle.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+  if (!persist) return;
+  try {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+  } catch {
+    /* noop */
+  }
+}
+
+function getScreenTitle(screen) {
+  if (screen === "register") return "Register";
+  if (screen === "inventory") return "Inventory";
+  return "Dashboard";
+}
+
+function setActiveNavRoute(route) {
+  state.activeNavRoute = route || state.currentScreen || "dashboard";
+  for (const item of sidebarNavItems) {
+    item.classList.toggle("active", item.dataset.route === state.activeNavRoute);
+  }
+}
+
+function updateAppHeader() {
+  const title = getScreenTitle(state.currentScreen);
+  if (headerScreenTitle) headerScreenTitle.textContent = title;
+  if (headerScreenKicker) headerScreenKicker.textContent = state.activeNavRoute === "dashboard" ? "POS" : "Module";
+}
+
+function initializeSidebarState() {
+  setSidebarCollapsed(loadSidebarCollapsed(), false);
+  setSidebarDrawerOpen(false);
+}
+
 function setScreen(name) {
+  state.currentScreen = name;
   appShell.classList.toggle("login-mode", name === "login");
+  if (appLayout) appLayout.classList.toggle("hidden", name === "login");
   loginScreen.classList.toggle("hidden", name !== "login");
   dashboardScreen.classList.toggle("hidden", name !== "dashboard");
   registerScreen.classList.toggle("hidden", name !== "register");
   if (inventoryScreen) inventoryScreen.classList.toggle("hidden", name !== "inventory");
+  if (name !== "login") {
+    setActiveNavRoute(name);
+    updateAppHeader();
+  }
+  setSidebarDrawerOpen(false);
   if (name !== "register") closeCheckoutPopup();
 }
 
@@ -1341,6 +1412,31 @@ async function openInventoryScreen() {
   await refreshInventoryData();
 }
 
+async function openRegisterScreen() {
+  setScreen("register");
+  checkoutError.textContent = "";
+  await refreshServices();
+  await ensurePrintCatalogFromClient();
+  renderCart();
+  await refreshSummary();
+}
+
+async function openServicesManagerFromNav() {
+  await openRegisterScreen();
+  setActiveNavRoute("services");
+  updateAppHeader();
+  renderServiceAdmin();
+  servicesDialog.showModal();
+}
+
+function logoutToLogin() {
+  state.currentStaff = null;
+  state.cart = [];
+  state.saleLocked = false;
+  state.lastTransaction = null;
+  setScreen("login");
+}
+
 function rowOrEmpty(html, colSpan, emptyText) {
   return html || `<tr><td colspan="${colSpan}" class="muted-cell">${escapeHtml(emptyText)}</td></tr>`;
 }
@@ -1705,6 +1801,8 @@ async function refreshReports() {
 
 async function openReportsDialog() {
   if (!reportsDialog) return;
+  setActiveNavRoute("reports");
+  updateAppHeader();
   setReportsDateDefaults();
   await refreshReports();
   reportsDialog.showModal();
@@ -2335,6 +2433,8 @@ async function refreshTransactions() {
 
 async function openTransactionsDialog() {
   if (!transactionsDialog) return;
+  setActiveNavRoute("transactions");
+  updateAppHeader();
   if (transactionsPageSize) {
     const next = Number(transactionsPageSize.value || 10);
     transactionsPageSizeValue = Number.isFinite(next) && next > 0 ? Math.min(100, Math.floor(next)) : 10;
@@ -3860,21 +3960,11 @@ dashboardTiles.addEventListener("click", async (e) => {
   const b = e.target.closest(".tile");
   if (!b) return;
   if (b.dataset.action === "register") {
-    setScreen("register");
-    checkoutError.textContent = "";
-    await refreshServices();
-    await ensurePrintCatalogFromClient();
-    renderCart();
-    await refreshSummary();
+    await openRegisterScreen();
     return;
   }
   if (b.dataset.action === "catalog") {
-    setScreen("register");
-    await refreshServices();
-    await ensurePrintCatalogFromClient();
-    renderCart();
-    renderServiceAdmin();
-    servicesDialog.showModal();
+    await openServicesManagerFromNav();
     return;
   }
   if (b.dataset.action === "reports") {
@@ -3893,17 +3983,94 @@ dashboardTiles.addEventListener("click", async (e) => {
   window.alert("Module draft will be built next.");
 });
 
+async function handleSidebarRoute(route) {
+  if (!route) return;
+  if (route === "dashboard") {
+    setScreen("dashboard");
+    updateClock();
+    await refreshSummary();
+    return;
+  }
+  if (route === "register") {
+    await openRegisterScreen();
+    return;
+  }
+  if (route === "inventory") {
+    await refreshServices();
+    await openInventoryScreen();
+    return;
+  }
+  if (route === "services") {
+    await openServicesManagerFromNav();
+    return;
+  }
+  if (route === "reports") {
+    await openReportsDialog();
+    return;
+  }
+  if (route === "transactions") {
+    await openTransactionsDialog();
+    return;
+  }
+  if (route === "settings") {
+    window.alert("Settings module placeholder.");
+    return;
+  }
+  if (route === "logout") {
+    logoutToLogin();
+  }
+}
+
+if (appSidebar) {
+  appSidebar.addEventListener("click", async (e) => {
+    const routeBtn = e.target.closest(".sidebar-nav-item[data-route]");
+    if (!routeBtn) return;
+    await handleSidebarRoute(String(routeBtn.dataset.route || ""));
+  });
+}
+
+if (sidebarToggle) {
+  sidebarToggle.addEventListener("click", () => {
+    if (isMobileSidebarViewport()) {
+      const isOpen = appShell.classList.contains("sidebar-drawer-open");
+      setSidebarDrawerOpen(!isOpen);
+      return;
+    }
+    const willCollapse = !appShell.classList.contains("sidebar-collapsed");
+    setSidebarCollapsed(willCollapse);
+  });
+}
+
+if (sidebarCollapseToggle) {
+  sidebarCollapseToggle.addEventListener("click", () => {
+    if (isMobileSidebarViewport()) {
+      const isOpen = appShell.classList.contains("sidebar-drawer-open");
+      setSidebarDrawerOpen(!isOpen);
+      return;
+    }
+    const willCollapse = !appShell.classList.contains("sidebar-collapsed");
+    setSidebarCollapsed(willCollapse);
+  });
+}
+
+if (appBackdrop) {
+  appBackdrop.addEventListener("click", () => setSidebarDrawerOpen(false));
+}
+
+window.addEventListener("resize", () => {
+  if (!isMobileSidebarViewport()) {
+    setSidebarDrawerOpen(false);
+  }
+});
+
 goDashboard.addEventListener("click", () => {
   setScreen("dashboard");
   updateClock();
+  refreshSummary().catch(() => {});
 });
 
 logoutBtn.addEventListener("click", () => {
-  state.currentStaff = null;
-  state.cart = [];
-  state.saleLocked = false;
-  state.lastTransaction = null;
-  setScreen("login");
+  logoutToLogin();
 });
 
 if (inventorySideDashboard) {
@@ -3915,10 +4082,7 @@ if (inventorySideDashboard) {
 
 if (inventorySideRegister) {
   inventorySideRegister.addEventListener("click", async () => {
-    setScreen("register");
-    checkoutError.textContent = "";
-    await refreshServices();
-    renderCart();
+    await openRegisterScreen();
   });
 }
 
@@ -3936,11 +4100,7 @@ if (inventorySideTransactions) {
 
 if (inventorySideLogout) {
   inventorySideLogout.addEventListener("click", () => {
-    state.currentStaff = null;
-    state.cart = [];
-    state.saleLocked = false;
-    state.lastTransaction = null;
-    setScreen("login");
+    logoutToLogin();
   });
 }
 
@@ -4519,6 +4679,10 @@ servicesDialog.addEventListener("click", (e) => {
     servicesDialog.close();
   }
 });
+servicesDialog.addEventListener("close", () => {
+  setActiveNavRoute(state.currentScreen);
+  updateAppHeader();
+});
 
 if (reportsRangePicker) {
   reportsRangePicker.addEventListener("change", async () => {
@@ -4597,6 +4761,10 @@ if (reportsDialog) {
   });
   reportsDialog.addEventListener("cancel", () => {
     if (reportsDialog.open) reportsDialog.close();
+  });
+  reportsDialog.addEventListener("close", () => {
+    setActiveNavRoute(state.currentScreen);
+    updateAppHeader();
   });
 }
 
@@ -4835,6 +5003,8 @@ if (transactionsDialog) {
   });
   transactionsDialog.addEventListener("close", () => {
     if (transactionsSelectMenu) transactionsSelectMenu.hidden = true;
+    setActiveNavRoute(state.currentScreen);
+    updateAppHeader();
   });
 }
 
@@ -5466,6 +5636,7 @@ async function init() {
   state.subcategoryStatus = loadSubcategoryStatus();
   state.subsubcategoryOverrides = loadSubsubcategoryOverrides();
   state.deletedServiceIds = loadDeletedServiceIds();
+  initializeSidebarState();
   setPayment("cash");
   setScreen("login");
   updateClock();
