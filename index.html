@@ -37,6 +37,7 @@
         <input id="dash-search" class="dash-search" type="search" placeholder="Looking for something? Start here">
         <section id="dashboard-tiles" class="tile-grid">
           <button class="tile" data-action="register">Register</button>
+          <button class="tile" data-action="inventory">Inventory</button>
           <button class="tile" data-action="reports">Reports</button>
           <button class="tile" data-action="transactions">Transactions</button>
           <button class="tile" data-action="terminal">Terminal</button>
@@ -178,7 +179,147 @@
       </section>
       <div id="checkout-overlay" class="checkout-overlay hidden" aria-hidden="true"></div>
     </section>
+
+    <section id="inventory-screen" class="inventory-screen hidden">
+      <aside class="glass-panel inventory-sidebar">
+        <h3>Inventory</h3>
+        <button id="inventory-side-dashboard" type="button" class="btn ghost small">Dashboard</button>
+        <button id="inventory-side-register" type="button" class="btn ghost small">Register</button>
+        <button id="inventory-side-reports" type="button" class="btn ghost small">Reports</button>
+        <button id="inventory-side-transactions" type="button" class="btn ghost small">Transactions</button>
+        <button id="inventory-side-logout" type="button" class="btn ghost small">Logout</button>
+      </aside>
+
+      <section class="glass-panel inventory-main">
+        <div class="inventory-main-head">
+          <h2>Inventory</h2>
+          <p id="inventory-last-updated" class="inline-note">Last updated: --:--:--</p>
+        </div>
+
+        <div class="inventory-toolbar">
+          <input id="inventory-search" type="search" placeholder="Search product, SKU, category, supplier">
+          <select id="inventory-category-filter">
+            <option value="">All categories</option>
+          </select>
+          <select id="inventory-status-filter">
+            <option value="">All stock</option>
+            <option value="low">Low stock</option>
+            <option value="active">Active only</option>
+            <option value="inactive">Inactive only</option>
+          </select>
+          <select id="inventory-sort">
+            <option value="name_asc">Sort: Name A-Z</option>
+            <option value="name_desc">Sort: Name Z-A</option>
+            <option value="stock_asc">Sort: Stock low-high</option>
+            <option value="stock_desc">Sort: Stock high-low</option>
+            <option value="updated_desc">Sort: Recently updated</option>
+          </select>
+          <button id="inventory-refresh" type="button" class="btn ghost small">Refresh</button>
+        </div>
+
+        <section class="inventory-new-row">
+          <h3>Quick Add Product</h3>
+          <div class="inventory-new-grid">
+            <input id="inventory-new-name" type="text" placeholder="Product name">
+            <input id="inventory-new-sku" type="text" placeholder="SKU (unique)">
+            <input id="inventory-new-category" type="text" placeholder="Category">
+            <input id="inventory-new-unit" type="text" placeholder="Unit (pc, pack)">
+            <input id="inventory-new-cost" type="number" step="0.01" min="0" placeholder="Actual cost">
+            <input id="inventory-new-price" type="number" step="0.01" min="0" placeholder="Selling price">
+            <input id="inventory-new-stock" type="number" step="0.01" min="0" placeholder="On hand qty">
+            <input id="inventory-new-reorder" type="number" step="0.01" min="0" placeholder="Reorder level">
+            <input id="inventory-new-supplier" type="text" placeholder="Supplier">
+            <select id="inventory-new-linked-service">
+              <option value="">(No linked service)</option>
+            </select>
+            <select id="inventory-new-active">
+              <option value="1">Active</option>
+              <option value="0">Disabled</option>
+            </select>
+            <button id="inventory-add-btn" type="button" class="btn primary">Add Product</button>
+          </div>
+          <p id="inventory-error" class="inline-note error" aria-live="polite"></p>
+          <p id="inventory-success" class="inline-note success" aria-live="polite"></p>
+        </section>
+
+        <section class="list-box inventory-table-panel">
+          <div class="inventory-selection-row">
+            <span id="inventory-selected-count" class="inline-note">0 selected</span>
+            <select id="inventory-selected-action">
+              <option value="">Select action</option>
+              <option value="enable">Enable</option>
+              <option value="disable">Disable</option>
+              <option value="delete">Delete</option>
+              <option value="move">Move category</option>
+              <option value="adjust">Bulk stock adjust</option>
+            </select>
+            <button id="inventory-apply-action" type="button" class="btn ghost small">Apply</button>
+          </div>
+          <div class="sale-table-wrap inventory-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th><input id="inventory-select-all" type="checkbox" aria-label="Select all products"></th>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Category</th>
+                  <th>Unit</th>
+                  <th class="num-col">On Hand</th>
+                  <th class="num-col">Reorder</th>
+                  <th class="num-col">Actual Cost</th>
+                  <th class="num-col">Selling Price</th>
+                  <th class="num-col">Profit / Unit</th>
+                  <th class="num-col">Stock Value</th>
+                  <th>Supplier</th>
+                  <th>Linked Service</th>
+                  <th>Status</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-body">
+                <tr><td colspan="15" class="muted-cell">No inventory items yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="inventory-pager">
+            <div class="inventory-pager-left">
+              <label for="inventory-page-size" class="inline-note">Show</label>
+              <select id="inventory-page-size">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="inventory-pager-right">
+              <button id="inventory-prev" type="button" class="btn ghost small">Prev</button>
+              <span id="inventory-page-label" class="inline-note">Page 1 of 1</span>
+              <button id="inventory-next" type="button" class="btn ghost small">Next</button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </section>
   </main>
+
+  <dialog id="inventory-adjust-dialog" class="mini-modal">
+    <div class="glass-panel mini-modal-card">
+      <h3>Bulk Stock Update</h3>
+      <label for="inventory-adjust-type">Adjustment type</label>
+      <select id="inventory-adjust-type">
+        <option value="+">Increase (+)</option>
+        <option value="-">Decrease (-)</option>
+      </select>
+      <label for="inventory-adjust-qty">Quantity</label>
+      <input id="inventory-adjust-qty" type="number" min="0.01" step="0.01" value="1">
+      <label for="inventory-adjust-note">Reason note</label>
+      <input id="inventory-adjust-note" type="text" placeholder="e.g. Monthly count correction">
+      <div class="row-actions modal-actions">
+        <button id="inventory-adjust-cancel" type="button" class="btn ghost">Cancel</button>
+        <button id="inventory-adjust-apply" type="button" class="btn primary">Apply</button>
+      </div>
+    </div>
+  </dialog>
 
   <dialog id="services-dialog" class="modal">
     <form method="dialog" class="glass-panel modal-card">

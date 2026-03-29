@@ -136,11 +136,46 @@ function initSchema() {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS inventory_products (
+      id TEXT PRIMARY KEY,
+      product_name TEXT NOT NULL,
+      sku TEXT UNIQUE,
+      category TEXT NOT NULL DEFAULT '',
+      unit TEXT NOT NULL DEFAULT 'pc',
+      actual_cost REAL NOT NULL DEFAULT 0 CHECK (actual_cost >= 0),
+      selling_price REAL NOT NULL DEFAULT 0 CHECK (selling_price >= 0),
+      stock_qty REAL NOT NULL DEFAULT 0,
+      reorder_level REAL NOT NULL DEFAULT 0 CHECK (reorder_level >= 0),
+      supplier TEXT NOT NULL DEFAULT '',
+      linked_service_id TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (linked_service_id) REFERENCES services(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS inventory_movements (
+      id TEXT PRIMARY KEY,
+      product_id TEXT NOT NULL,
+      movement_type TEXT NOT NULL CHECK (movement_type IN ('adjustment', 'sale_deduction', 'restock')),
+      qty_change REAL NOT NULL,
+      previous_qty REAL NOT NULL,
+      new_qty REAL NOT NULL,
+      note TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_by TEXT,
+      FOREIGN KEY (product_id) REFERENCES inventory_products(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(tx_date);
     CREATE INDEX IF NOT EXISTS idx_cash_movements_date ON cash_movements(entry_date);
     CREATE INDEX IF NOT EXISTS idx_transaction_items_tx ON transaction_items(transaction_id);
     CREATE INDEX IF NOT EXISTS idx_price_history_service ON service_price_history(service_id, changed_at DESC);
     CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id, created_at DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_products_sku_unique ON inventory_products(sku) WHERE sku IS NOT NULL AND trim(sku) <> '';
+    CREATE INDEX IF NOT EXISTS idx_inventory_products_category ON inventory_products(category);
+    CREATE INDEX IF NOT EXISTS idx_inventory_products_active ON inventory_products(is_active);
+    CREATE INDEX IF NOT EXISTS idx_inventory_movements_product_date ON inventory_movements(product_id, created_at DESC);
   `);
 
   const serviceCols = db.prepare("PRAGMA table_info(services)").all();
@@ -182,6 +217,23 @@ function initSchema() {
   }
 
   db.exec("CREATE INDEX IF NOT EXISTS idx_transactions_deleted ON transactions(is_deleted, tx_date);");
+
+  const inventoryCols = db.prepare("PRAGMA table_info(inventory_products)").all();
+  if (inventoryCols.length > 0) {
+    if (!inventoryCols.some((col) => col.name === "linked_service_id")) {
+      db.exec("ALTER TABLE inventory_products ADD COLUMN linked_service_id TEXT;");
+    }
+    if (!inventoryCols.some((col) => col.name === "is_active")) {
+      db.exec("ALTER TABLE inventory_products ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1;");
+      db.exec("UPDATE inventory_products SET is_active = 1 WHERE is_active IS NULL;");
+    }
+    if (!inventoryCols.some((col) => col.name === "created_at")) {
+      db.exec("ALTER TABLE inventory_products ADD COLUMN created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP;");
+    }
+    if (!inventoryCols.some((col) => col.name === "updated_at")) {
+      db.exec("ALTER TABLE inventory_products ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP;");
+    }
+  }
 }
 
 function logAudit(entityType, entityId, action, staffId = "", details = null) {
@@ -998,6 +1050,74 @@ function listServices() {
   return rows.map(mapServiceRow);
 }
 
+function toFiniteNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function mapInventoryRow(row) {
+  return {
+    id: row.id,
+    product_name: row.product_name,
+    sku: row.sku || "",
+    category: row.category || "",
+    unit: row.unit || "pc",
+    actual_cost: Number(row.actual_cost || 0),
+    selling_price: Number(row.selling_price || 0),
+    stock_qty: Number(row.stock_qty || 0),
+    reorder_level: Number(row.reorder_level || 0),
+    supplier: row.supplier || "",
+    linked_service_id: row.linked_service_id || null,
+    linked_service_name: row.linked_service_name || "",
+    is_active: Boolean(row.is_active),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    gross_profit_per_unit: Number((Number(row.selling_price || 0) - Number(row.actual_cost || 0)).toFixed(2)),
+    inventory_value: Number((Number(row.stock_qty || 0) * Number(row.actual_cost || 0)).toFixed(2))
+  };
+}
+
+function listInventoryProducts() {
+  const rows = db.prepare(`
+    SELECT p.*, s.name AS linked_service_name
+    FROM inventory_products p
+    LEFT JOIN services s ON s.id = p.linked_service_id
+    ORDER BY p.product_name COLLATE NOCASE ASC, p.id ASC
+  `).all();
+  return rows.map(mapInventoryRow);
+}
+
+function listInventoryMovements(limit = 200) {
+  return db.prepare(`
+      SELECT id, product_id, movement_type, qty_change, previous_qty, new_qty, note, created_at, created_by
+      FROM inventory_movements
+      ORDER BY created_at DESC, id DESC
+      LIMIT ?
+    `).all(Number(limit));
+}
+
+function createInventoryMovement({ productId, movementType, qtyChange, previousQty, newQty, note = "", createdBy = "" }) {
+  const id = `IM-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  db.prepare(`
+      INSERT INTO inventory_movements (id, product_id, movement_type, qty_change, previous_qty, new_qty, note, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+    id,
+    productId,
+    movementType,
+    Number(qtyChange),
+    Number(previousQty),
+    Number(newQty),
+    String(note || "").trim() || null,
+    String(createdBy || "").trim() || null,
+    nowIso()
+  );
+}
+
 function setMeta(key, value) {
   db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
     .run(key, value);
@@ -1213,6 +1333,308 @@ async function handleApi(request, response, urlObj) {
         note
       }
     });
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/inventory") {
+    sendJson(response, 200, { items: listInventoryProducts() });
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/inventory/movements") {
+    const limit = Number(urlObj.searchParams.get("limit") || 200);
+    sendJson(response, 200, { items: listInventoryMovements(Number.isFinite(limit) ? limit : 200) });
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/inventory") {
+    const body = await readJsonBody(request);
+    const productName = String(body.product_name || body.name || "").trim();
+    const sku = String(body.sku || "").trim();
+    const category = String(body.category || "").trim();
+    const unit = String(body.unit || "pc").trim() || "pc";
+    const actualCost = toFiniteNumber(body.actual_cost ?? body.unitCost, NaN);
+    const sellingPrice = toFiniteNumber(body.selling_price ?? body.sellingPrice, NaN);
+    const stockQty = toFiniteNumber(body.stock_qty ?? body.onHand, NaN);
+    const reorderLevel = toFiniteNumber(body.reorder_level ?? body.reorderLevel, 0);
+    const supplier = String(body.supplier || "").trim();
+    const linkedServiceId = String(body.linked_service_id ?? body.linkedServiceId ?? "").trim() || null;
+    const isActive = Object.prototype.hasOwnProperty.call(body, "is_active")
+      ? Boolean(body.is_active)
+      : (Object.prototype.hasOwnProperty.call(body, "active") ? Boolean(body.active) : true);
+    const createdBy = String(body.created_by || body.changedByStaffId || "system").trim() || "system";
+
+    if (!productName) {
+      sendJson(response, 400, { error: "product_name is required." });
+      return;
+    }
+    if (!Number.isFinite(actualCost) || actualCost < 0 || !Number.isFinite(sellingPrice) || sellingPrice < 0) {
+      sendJson(response, 400, { error: "actual_cost and selling_price must be valid non-negative numbers." });
+      return;
+    }
+    if (!Number.isFinite(stockQty) || !Number.isFinite(reorderLevel) || reorderLevel < 0) {
+      sendJson(response, 400, { error: "stock_qty and reorder_level must be valid numbers." });
+      return;
+    }
+    if (sku) {
+      const existingSku = db.prepare("SELECT id FROM inventory_products WHERE sku = ?").get(sku);
+      if (existingSku) {
+        sendJson(response, 409, { error: "SKU already exists." });
+        return;
+      }
+    }
+    if (linkedServiceId) {
+      const svc = db.prepare("SELECT id FROM services WHERE id = ?").get(linkedServiceId);
+      if (!svc) {
+        sendJson(response, 404, { error: "Linked service not found." });
+        return;
+      }
+    }
+
+    const id = `INV-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const now = nowIso();
+    runInTransaction(() => {
+      db.prepare(`
+        INSERT INTO inventory_products
+        (id, product_name, sku, category, unit, actual_cost, selling_price, stock_qty, reorder_level, supplier, linked_service_id, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        id, productName, sku || null, category, unit, Number(actualCost), Number(sellingPrice),
+        Number(stockQty), Number(reorderLevel), supplier, linkedServiceId, isActive ? 1 : 0, now, now
+      );
+      createInventoryMovement({
+        productId: id,
+        movementType: "restock",
+        qtyChange: Number(stockQty),
+        previousQty: 0,
+        newQty: Number(stockQty),
+        note: "Initial stock",
+        createdBy
+      });
+    });
+    const row = db.prepare(`
+      SELECT p.*, s.name AS linked_service_name
+      FROM inventory_products p
+      LEFT JOIN services s ON s.id = p.linked_service_id
+      WHERE p.id = ?
+    `).get(id);
+    sendJson(response, 201, { item: mapInventoryRow(row) });
+    return;
+  }
+
+  if (request.method === "PATCH" && pathname === "/api/inventory/bulk-stock-adjust") {
+    const body = await readJsonBody(request);
+    const ids = Array.isArray(body.ids) ? body.ids.map((v) => String(v || "").trim()).filter(Boolean) : [];
+    const delta = toFiniteNumber(body.delta, NaN);
+    const note = String(body.note || "").trim();
+    const createdBy = String(body.created_by || body.changedByStaffId || "system").trim() || "system";
+    if (ids.length === 0) {
+      sendJson(response, 400, { error: "ids are required." });
+      return;
+    }
+    if (!Number.isFinite(delta) || delta === 0) {
+      sendJson(response, 400, { error: "delta must be a non-zero number." });
+      return;
+    }
+    runInTransaction(() => {
+      const getItem = db.prepare("SELECT id, stock_qty FROM inventory_products WHERE id = ?");
+      const updateQty = db.prepare("UPDATE inventory_products SET stock_qty = ?, updated_at = ? WHERE id = ?");
+      const now = nowIso();
+      for (const id of ids) {
+        const item = getItem.get(id);
+        if (!item) continue;
+        const previousQty = Number(item.stock_qty || 0);
+        const nextQty = Number((previousQty + delta).toFixed(4));
+        updateQty.run(nextQty, now, id);
+        createInventoryMovement({
+          productId: id,
+          movementType: delta > 0 ? "restock" : "adjustment",
+          qtyChange: Number(delta),
+          previousQty,
+          newQty: nextQty,
+          note: note || "Bulk stock adjustment",
+          createdBy
+        });
+      }
+    });
+    sendJson(response, 200, { ok: true });
+    return;
+  }
+
+  if (request.method === "DELETE" && pathname.startsWith("/api/inventory/")) {
+    const id = parseIdFromPath(pathname, "/api/inventory/");
+    if (!id || id === "bulk-stock-adjust" || id === "movements") {
+      sendJson(response, 404, { error: "Not found." });
+      return;
+    }
+    const exists = db.prepare("SELECT id FROM inventory_products WHERE id = ?").get(id);
+    if (!exists) {
+      sendJson(response, 404, { error: "Product not found." });
+      return;
+    }
+    runInTransaction(() => {
+      db.prepare("DELETE FROM inventory_products WHERE id = ?").run(id);
+    });
+    sendJson(response, 200, { ok: true });
+    return;
+  }
+
+  if (request.method === "PATCH" && pathname.startsWith("/api/inventory/")) {
+    const id = parseIdFromPath(pathname, "/api/inventory/");
+    if (!id || id === "bulk-stock-adjust" || id === "movements") {
+      sendJson(response, 404, { error: "Not found." });
+      return;
+    }
+    const body = await readJsonBody(request);
+    const current = db.prepare("SELECT * FROM inventory_products WHERE id = ?").get(id);
+    if (!current) {
+      sendJson(response, 404, { error: "Product not found." });
+      return;
+    }
+
+    const updates = [];
+    const params = [];
+    const now = nowIso();
+    const createdBy = String(body.created_by || body.changedByStaffId || "system").trim() || "system";
+    let movement = null;
+
+    const patchText = (dbCol, raw) => {
+      if (typeof raw !== "string") return;
+      updates.push(`${dbCol} = ?`);
+      params.push(raw.trim());
+    };
+
+    if (Object.prototype.hasOwnProperty.call(body, "product_name") || Object.prototype.hasOwnProperty.call(body, "name")) {
+      const next = String((body.product_name ?? body.name) || "").trim();
+      if (!next) {
+        sendJson(response, 400, { error: "product_name cannot be empty." });
+        return;
+      }
+      updates.push("product_name = ?");
+      params.push(next);
+    }
+    if (Object.prototype.hasOwnProperty.call(body, "sku")) {
+      const sku = String(body.sku || "").trim();
+      if (sku) {
+        const clash = db.prepare("SELECT id FROM inventory_products WHERE sku = ? AND id <> ?").get(sku, id);
+        if (clash) {
+          sendJson(response, 409, { error: "SKU already exists." });
+          return;
+        }
+      }
+      updates.push("sku = ?");
+      params.push(sku || null);
+    }
+    patchText("category", body.category);
+    patchText("unit", body.unit);
+    patchText("supplier", body.supplier);
+    if (Object.prototype.hasOwnProperty.call(body, "linked_service_id") || Object.prototype.hasOwnProperty.call(body, "linkedServiceId")) {
+      const linkedServiceId = String(body.linked_service_id ?? body.linkedServiceId ?? "").trim() || null;
+      if (linkedServiceId) {
+        const svc = db.prepare("SELECT id FROM services WHERE id = ?").get(linkedServiceId);
+        if (!svc) {
+          sendJson(response, 404, { error: "Linked service not found." });
+          return;
+        }
+      }
+      updates.push("linked_service_id = ?");
+      params.push(linkedServiceId);
+    }
+    if (Object.prototype.hasOwnProperty.call(body, "is_active") || Object.prototype.hasOwnProperty.call(body, "active")) {
+      const nextActive = Object.prototype.hasOwnProperty.call(body, "is_active") ? Boolean(body.is_active) : Boolean(body.active);
+      updates.push("is_active = ?");
+      params.push(nextActive ? 1 : 0);
+    }
+
+    const setNumeric = (dbCol, incoming, allowNegative = false) => {
+      if (!Object.prototype.hasOwnProperty.call(body, incoming)) return null;
+      const parsed = toFiniteNumber(body[incoming], NaN);
+      if (!Number.isFinite(parsed) || (!allowNegative && parsed < 0)) {
+        return { error: `${incoming} must be a valid ${allowNegative ? "" : "non-negative "}number.` };
+      }
+      updates.push(`${dbCol} = ?`);
+      params.push(Number(parsed));
+      return Number(parsed);
+    };
+
+    const nextActualCost = setNumeric("actual_cost", "actual_cost");
+    if (nextActualCost && nextActualCost.error) {
+      sendJson(response, 400, { error: nextActualCost.error });
+      return;
+    }
+    const nextSellingPrice = setNumeric("selling_price", "selling_price");
+    if (nextSellingPrice && nextSellingPrice.error) {
+      sendJson(response, 400, { error: nextSellingPrice.error });
+      return;
+    }
+    const nextActualCostAlt = setNumeric("actual_cost", "unitCost");
+    if (nextActualCostAlt && nextActualCostAlt.error) {
+      sendJson(response, 400, { error: nextActualCostAlt.error });
+      return;
+    }
+    const nextSellingPriceAlt = setNumeric("selling_price", "sellingPrice");
+    if (nextSellingPriceAlt && nextSellingPriceAlt.error) {
+      sendJson(response, 400, { error: nextSellingPriceAlt.error });
+      return;
+    }
+    const nextReorder = setNumeric("reorder_level", "reorder_level");
+    if (nextReorder && nextReorder.error) {
+      sendJson(response, 400, { error: nextReorder.error });
+      return;
+    }
+    const nextReorderAlt = setNumeric("reorder_level", "reorderLevel");
+    if (nextReorderAlt && nextReorderAlt.error) {
+      sendJson(response, 400, { error: nextReorderAlt.error });
+      return;
+    }
+
+    const hasStockQty = Object.prototype.hasOwnProperty.call(body, "stock_qty") || Object.prototype.hasOwnProperty.call(body, "onHand");
+    if (hasStockQty) {
+      const incoming = Object.prototype.hasOwnProperty.call(body, "stock_qty") ? body.stock_qty : body.onHand;
+      const nextQty = toFiniteNumber(incoming, NaN);
+      if (!Number.isFinite(nextQty)) {
+        sendJson(response, 400, { error: "stock_qty must be a valid number." });
+        return;
+      }
+      updates.push("stock_qty = ?");
+      params.push(Number(nextQty));
+      const prev = Number(current.stock_qty || 0);
+      if (Number(nextQty) !== prev) {
+        movement = {
+          movementType: Number(nextQty) > prev ? "restock" : "adjustment",
+          qtyChange: Number((Number(nextQty) - prev).toFixed(4)),
+          previousQty: prev,
+          newQty: Number(nextQty),
+          note: String(body.note || "Inline stock update").trim() || "Inline stock update",
+          createdBy
+        };
+      }
+    }
+
+    if (updates.length === 0) {
+      sendJson(response, 400, { error: "No valid fields to update." });
+      return;
+    }
+    updates.push("updated_at = ?");
+    params.push(now, id);
+
+    runInTransaction(() => {
+      db.prepare(`UPDATE inventory_products SET ${updates.join(", ")} WHERE id = ?`).run(...params);
+      if (movement) {
+        createInventoryMovement({
+          productId: id,
+          ...movement
+        });
+      }
+    });
+
+    const row = db.prepare(`
+      SELECT p.*, s.name AS linked_service_name
+      FROM inventory_products p
+      LEFT JOIN services s ON s.id = p.linked_service_id
+      WHERE p.id = ?
+    `).get(id);
+    sendJson(response, 200, { item: mapInventoryRow(row) });
     return;
   }
 
@@ -1793,6 +2215,7 @@ async function handleApi(request, response, urlObj) {
       total += lineTotal;
       normalizedItems.push({
         serviceId: item.id ? String(item.id) : null,
+        inventoryProductId: item.inventoryProductId ? String(item.inventoryProductId).trim() : null,
         serviceName,
         qty,
         unitPrice,
@@ -1838,6 +2261,29 @@ async function handleApi(request, response, urlObj) {
       `);
       for (const item of normalizedItems) {
         insertItem.run(txId, item.serviceId, item.serviceName, item.unitPrice, item.qty, item.lineTotal);
+      }
+
+      // Inventory hook point: if transaction items carry inventoryProductId, deduct stock and log movement.
+      const getInventory = db.prepare("SELECT id, stock_qty FROM inventory_products WHERE id = ?");
+      const updateInventory = db.prepare("UPDATE inventory_products SET stock_qty = ?, updated_at = ? WHERE id = ?");
+      for (const item of normalizedItems) {
+        const productId = String(item.inventoryProductId || "").trim();
+        if (!productId) continue;
+        const product = getInventory.get(productId);
+        if (!product) continue;
+        const previousQty = Number(product.stock_qty || 0);
+        const qtyToDeduct = Number(item.qty || 0);
+        const newQty = Number((previousQty - qtyToDeduct).toFixed(4));
+        updateInventory.run(newQty, nowIso(), productId);
+        createInventoryMovement({
+          productId,
+          movementType: "sale_deduction",
+          qtyChange: Number((-Math.abs(qtyToDeduct)).toFixed(4)),
+          previousQty,
+          newQty,
+          note: `Sale ${txId}`,
+          createdBy: staffId
+        });
       }
     });
 
@@ -2075,6 +2521,8 @@ async function handleApi(request, response, urlObj) {
     }
 
     runInTransaction(() => {
+      db.exec("DELETE FROM inventory_movements;");
+      db.exec("DELETE FROM inventory_products;");
       db.exec("DELETE FROM transaction_items;");
       db.exec("DELETE FROM transactions;");
       db.exec("DELETE FROM cash_movements;");
