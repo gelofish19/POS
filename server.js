@@ -1827,6 +1827,46 @@ async function handleApi(request, response, urlObj) {
     return;
   }
 
+  if (request.method === "PATCH" && pathname === "/api/services/taxonomy/subsubcategory/transfer") {
+    const body = await readJsonBody(request);
+    const fromCategory = String(body.fromCategory || "").trim();
+    const fromSubcategory = String(body.fromSubcategory || "").trim();
+    const fromName = String(body.fromName || "").trim();
+    const toCategory = String(body.toCategory || "").trim();
+    const toSubcategory = String(body.toSubcategory || "").trim();
+    const toName = String(body.toName || "").trim();
+    if (!fromCategory || !fromSubcategory || !fromName || !toCategory || !toSubcategory || !toName) {
+      sendJson(response, 400, { error: "fromCategory, fromSubcategory, fromName, toCategory, toSubcategory, and toName are required." });
+      return;
+    }
+    const now = new Date().toISOString();
+    runInTransaction(() => {
+      db.prepare("UPDATE services SET category = ?, subcategory = ?, sub_subcategory = ?, updated_at = ? WHERE category = ? AND subcategory = ? AND sub_subcategory = ?")
+        .run(toCategory, toSubcategory, toName, now, fromCategory, fromSubcategory, fromName);
+
+      const taxonomy = getMergedTaxonomy();
+      if (!taxonomy.categories.includes(toCategory)) taxonomy.categories.push(toCategory);
+      taxonomy.categories.sort((a, b) => a.localeCompare(b));
+      taxonomy.subcategories[toCategory] = uniquePreserve([...(taxonomy.subcategories[toCategory] || []), toSubcategory]).sort((a, b) => a.localeCompare(b));
+
+      const oldKey = `${fromCategory}::${fromSubcategory}`;
+      const newKey = `${toCategory}::${toSubcategory}`;
+
+      const oldChildren = Array.isArray(taxonomy.subSubcategories?.[oldKey]) ? taxonomy.subSubcategories[oldKey] : [];
+      const nextOldChildren = oldChildren.filter((name) => name !== fromName);
+      taxonomy.subSubcategories = taxonomy.subSubcategories || {};
+      taxonomy.subSubcategories[oldKey] = nextOldChildren;
+      if (nextOldChildren.length === 0) delete taxonomy.subSubcategories[oldKey];
+
+      const newChildren = Array.isArray(taxonomy.subSubcategories?.[newKey]) ? taxonomy.subSubcategories[newKey] : [];
+      taxonomy.subSubcategories[newKey] = uniquePreserve(newChildren.concat([toName])).sort((a, b) => a.localeCompare(b));
+
+      saveStoredTaxonomy(taxonomy);
+    });
+    sendJson(response, 200, { taxonomy: getMergedTaxonomy() });
+    return;
+  }
+
   if (request.method === "POST" && pathname === "/api/services/taxonomy/subsubcategory") {
     const body = await readJsonBody(request);
     const category = String(body.category || "").trim();

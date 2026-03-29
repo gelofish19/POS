@@ -29,6 +29,9 @@ const state = {
   deletedServiceIds: {},
   reports: null,
   transactionsView: [],
+  dashboardReports: {
+    range: "all"
+  },
   currentScreen: "login",
   activeNavRoute: "dashboard",
   inventory: {
@@ -38,7 +41,9 @@ const state = {
     pageSize: 10,
     lastUpdated: "",
     serviceLinks: {},
-    serviceProductMap: {}
+    serviceProductMap: {},
+    view: "list",
+    groups: { category: true, product: true }
   }
 };
 
@@ -63,8 +68,21 @@ const loginForm = document.getElementById("login-form");
 const loginError = document.getElementById("login-error");
 const activeStaffName = document.getElementById("active-staff-name");
 const activeStaffRole = document.getElementById("active-staff-role");
+const dashboardWelcomeTitle = document.getElementById("dashboard-welcome-title");
+const dashboardWelcomeRole = document.getElementById("dashboard-welcome-role");
 const dashDate = document.getElementById("dash-date");
 const dashTime = document.getElementById("dash-time");
+const dashboardRangeFilter = document.getElementById("dashboard-range-filter");
+const dashboardReportsError = document.getElementById("dashboard-reports-error");
+const dashboardTotalSales = document.getElementById("dashboard-total-sales");
+const dashboardTransactionCount = document.getElementById("dashboard-transaction-count");
+const dashboardCashInTotal = document.getElementById("dashboard-cash-in-total");
+const dashboardCashOutTotal = document.getElementById("dashboard-cash-out-total");
+const dashboardNetCash = document.getElementById("dashboard-net-cash");
+const dashboardReportsServiceBody = document.getElementById("dashboard-reports-service-body");
+const dashboardReportsTopBody = document.getElementById("dashboard-reports-top-body");
+const dashboardReportsPaymentBody = document.getElementById("dashboard-reports-payment-body");
+const dashboardReportsCashBody = document.getElementById("dashboard-reports-cash-body");
 const dashboardTiles = document.getElementById("dashboard-tiles");
 const goDashboard = document.getElementById("go-dashboard");
 const logoutBtn = document.getElementById("logout-btn");
@@ -261,6 +279,36 @@ const inventorySideReports = document.getElementById("inventory-side-reports");
 const inventorySideTransactions = document.getElementById("inventory-side-transactions");
 const inventorySideLogout = document.getElementById("inventory-side-logout");
 const inventoryLastUpdated = document.getElementById("inventory-last-updated");
+const inventoryOpenAdd = document.getElementById("inventory-open-add");
+const inventoryAddDialog = document.getElementById("inventory-add-dialog");
+const inventoryAddCancel = document.getElementById("inventory-add-cancel");
+const inventoryManageCategories = document.getElementById("inventory-manage-categories");
+const inventoryManageSubcategories = document.getElementById("inventory-manage-subcategories");
+const inventoryImportPlaceholder = document.getElementById("inventory-import-placeholder");
+const inventoryExportCsv = document.getElementById("inventory-export-csv");
+const inventoryGroupCategory = document.getElementById("inventory-group-category");
+const inventoryGroupProduct = document.getElementById("inventory-group-product");
+const inventorySubmenuCategory = document.getElementById("inventory-submenu-category");
+const inventorySubmenuProduct = document.getElementById("inventory-submenu-product");
+const inventoryPanelCategory = document.getElementById("inventory-panel-category");
+const inventoryPanelSubcategory = document.getElementById("inventory-panel-subcategory");
+const inventoryPanelAdd = document.getElementById("inventory-panel-add");
+const inventoryPanelList = document.getElementById("inventory-panel-list");
+const inventoryPanelImport = document.getElementById("inventory-panel-import");
+const inventoryPanelExport = document.getElementById("inventory-panel-export");
+const inventorySubmenuItems = Array.from(document.querySelectorAll(".inventory-submenu-item[data-inventory-view]"));
+const inventoryManageCategoriesDialog = document.getElementById("inventory-manage-categories-dialog");
+const inventoryTabCategory = document.getElementById("inventory-tab-category");
+const inventoryTabSubcategory = document.getElementById("inventory-tab-subcategory");
+const inventoryTabChild = document.getElementById("inventory-tab-child");
+const inventoryManageCategoryList = document.getElementById("inventory-manage-category-list");
+const inventoryManageSubcategoryList = document.getElementById("inventory-manage-subcategory-list");
+const inventoryManageChildList = document.getElementById("inventory-manage-child-list");
+const inventoryCategoryAdd = document.getElementById("inventory-category-add");
+const inventoryCategoryEdit = document.getElementById("inventory-category-edit");
+const inventoryCategoryDelete = document.getElementById("inventory-category-delete");
+const inventoryCategoryMove = document.getElementById("inventory-category-move");
+const inventoryCategoryClose = document.getElementById("inventory-category-close");
 const inventorySearch = document.getElementById("inventory-search");
 const inventoryCategoryFilter = document.getElementById("inventory-category-filter");
 const inventoryStatusFilter = document.getElementById("inventory-status-filter");
@@ -295,6 +343,11 @@ const inventoryAdjustQty = document.getElementById("inventory-adjust-qty");
 const inventoryAdjustNote = document.getElementById("inventory-adjust-note");
 const inventoryAdjustCancel = document.getElementById("inventory-adjust-cancel");
 const inventoryAdjustApply = document.getElementById("inventory-adjust-apply");
+const inventoryChoiceDialog = document.getElementById("inventory-choice-dialog");
+const inventoryChoiceTitle = document.getElementById("inventory-choice-title");
+const inventoryChoiceFields = document.getElementById("inventory-choice-fields");
+const inventoryChoiceCancel = document.getElementById("inventory-choice-cancel");
+const inventoryChoiceSave = document.getElementById("inventory-choice-save");
 let confirmSaleResolver = null;
 let adminStep = 1;
 let nameEditResolver = null;
@@ -322,6 +375,11 @@ let transactionsRangeEnd = "";
 let transactionsRangeAnchor = "";
 let transactionsSearchTimer = null;
 let inventoryAdjustResolver = null;
+let inventoryManageCategory = "";
+let inventoryManageSubcategory = "";
+let inventoryManageChild = "";
+let inventoryManageTab = "category";
+let inventoryChoiceResolver = null;
 let transactionsPage = 1;
 let transactionsSelectedIds = {};
 let transactionsPageSizeValue = 10;
@@ -983,6 +1041,26 @@ function getScreenTitle(screen) {
   return "Dashboard";
 }
 
+function getRouteTitle(route) {
+  const titles = {
+    dashboard: "Dashboard",
+    register: "Register",
+    inventory: "Inventory",
+    services: "Services",
+    reports: "Reports",
+    transactions: "Transactions",
+    terminal: "Terminal",
+    settlement: "Settlement",
+    manual: "Manual Entry",
+    catalog: "Catalog",
+    invoicing: "Invoicing",
+    orders: "Orders",
+    help: "Help",
+    settings: "Settings"
+  };
+  return titles[route] || "";
+}
+
 function setActiveNavRoute(route) {
   state.activeNavRoute = route || state.currentScreen || "dashboard";
   for (const item of sidebarNavItems) {
@@ -991,9 +1069,17 @@ function setActiveNavRoute(route) {
 }
 
 function updateAppHeader() {
-  const title = getScreenTitle(state.currentScreen);
+  const title = getRouteTitle(state.activeNavRoute) || getScreenTitle(state.currentScreen);
   if (headerScreenTitle) headerScreenTitle.textContent = title;
   if (headerScreenKicker) headerScreenKicker.textContent = state.activeNavRoute === "dashboard" ? "POS" : "Module";
+}
+
+function updateDashboardWelcome() {
+  if (!dashboardWelcomeTitle) return;
+  const staffName = String(state.currentStaff?.name || "Staff").trim() || "Staff";
+  const staffRole = String(state.currentStaff?.role || "Cashier").trim() || "Cashier";
+  dashboardWelcomeTitle.textContent = `Welcome back, ${staffName}`;
+  if (dashboardWelcomeRole) dashboardWelcomeRole.textContent = staffRole;
 }
 
 function initializeSidebarState() {
@@ -1013,14 +1099,19 @@ function setScreen(name) {
     setActiveNavRoute(name);
     updateAppHeader();
   }
+  if (name === "dashboard") {
+    refreshDashboardReports().catch((error) => {
+      if (dashboardReportsError) dashboardReportsError.textContent = error.message;
+    });
+  }
   setSidebarDrawerOpen(false);
   if (name !== "register") closeCheckoutPopup();
 }
 
 function updateClock() {
   const now = new Date();
-  dashDate.textContent = now.toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" });
-  dashTime.textContent = now.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
+  dashDate.textContent = now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  dashTime.textContent = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
 }
 
 async function refreshSummary() {
@@ -1087,6 +1178,148 @@ function ensureInventoryNewLinkedServiceOptions() {
   inventoryNewLinkedService.innerHTML = inventoryServiceOptionsHtml(selected);
 }
 
+function inventoryCategoryValues() {
+  return [...new Set((state.inventory.items || []).map((item) => String(item.category || "").trim()).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b)
+  );
+}
+
+function inventoryManageCategoriesListValues() {
+  const fromInventory = inventoryCategoryValues();
+  const fromTaxonomy = Array.isArray(state.taxonomy?.categories) ? state.taxonomy.categories : [];
+  return [...new Set([...fromTaxonomy, ...fromInventory].map((v) => String(v || "").trim()).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b)
+  );
+}
+
+function inventoryManageSubcategoryValues(category) {
+  if (!category) return [];
+  const fromTaxonomy = Array.isArray(state.taxonomy?.subcategories?.[category]) ? state.taxonomy.subcategories[category] : [];
+  return [...new Set(fromTaxonomy.map((v) => String(v || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+}
+
+function inventoryManageChildren(category, subcategory) {
+  if (!category || !subcategory) return [];
+  const key = taxonomySubKey(category, subcategory);
+  const fromTaxonomy = Array.isArray(state.taxonomy?.subSubcategories?.[key]) ? state.taxonomy.subSubcategories[key] : [];
+  return [...new Set(fromTaxonomy.map((v) => String(v || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+}
+
+function renderInventoryManageCategoryList() {
+  if (!inventoryManageCategoryList || !inventoryManageSubcategoryList || !inventoryManageChildList) return;
+  const categories = inventoryManageCategoriesListValues();
+  if (!categories.includes(inventoryManageCategory)) inventoryManageCategory = categories[0] || "";
+  inventoryManageCategoryList.innerHTML = categories
+    .map((cat) => `<option value="${escapeAttr(cat)}" ${cat === inventoryManageCategory ? "selected" : ""}>${escapeHtml(cat)}</option>`)
+    .join("");
+
+  const subcategories = inventoryManageSubcategoryValues(inventoryManageCategory);
+  if (!subcategories.includes(inventoryManageSubcategory)) inventoryManageSubcategory = subcategories[0] || "";
+  inventoryManageSubcategoryList.innerHTML = subcategories
+    .map((sub) => `<option value="${escapeAttr(sub)}" ${sub === inventoryManageSubcategory ? "selected" : ""}>${escapeHtml(sub)}</option>`)
+    .join("");
+
+  const children = inventoryManageChildren(inventoryManageCategory, inventoryManageSubcategory);
+  if (!children.includes(inventoryManageChild)) inventoryManageChild = children[0] || "";
+  inventoryManageChildList.innerHTML = children
+    .map((child) => `<option value="${escapeAttr(child)}" ${child === inventoryManageChild ? "selected" : ""}>${escapeHtml(child)}</option>`)
+    .join("");
+
+  if (inventoryCategoryMove) {
+    const level = getInventoryManageTab();
+    inventoryCategoryMove.disabled = level === "category";
+  }
+}
+
+function openInventoryAddDialog() {
+  clearInventoryMessage();
+  ensureInventoryNewLinkedServiceOptions();
+  if (!inventoryAddDialog) return;
+  if (inventoryAddDialog.open) inventoryAddDialog.close();
+  inventoryAddDialog.showModal();
+}
+
+function renderInventorySidebarState() {
+  const panels = {
+    category: inventoryPanelCategory,
+    subcategory: inventoryPanelSubcategory,
+    add: inventoryPanelAdd,
+    list: inventoryPanelList,
+    import: inventoryPanelImport,
+    export: inventoryPanelExport
+  };
+  for (const [key, panel] of Object.entries(panels)) {
+    if (!panel) continue;
+    panel.classList.toggle("hidden", state.inventory.view !== key);
+  }
+  for (const item of inventorySubmenuItems) {
+    item.classList.toggle("active", String(item.dataset.inventoryView || "") === state.inventory.view);
+  }
+  if (inventorySubmenuCategory) inventorySubmenuCategory.classList.toggle("hidden", !state.inventory.groups.category);
+  if (inventorySubmenuProduct) inventorySubmenuProduct.classList.toggle("hidden", !state.inventory.groups.product);
+  if (inventoryGroupCategory) inventoryGroupCategory.setAttribute("aria-expanded", state.inventory.groups.category ? "true" : "false");
+  if (inventoryGroupProduct) inventoryGroupProduct.setAttribute("aria-expanded", state.inventory.groups.product ? "true" : "false");
+}
+
+function setInventoryView(view) {
+  state.inventory.view = view;
+  renderInventorySidebarState();
+}
+
+function setInventoryManageTab(tab) {
+  inventoryManageTab = ["category", "subcategory", "child"].includes(tab) ? tab : "category";
+  const tabs = [inventoryTabCategory, inventoryTabSubcategory, inventoryTabChild];
+  for (const btn of tabs) {
+    if (!btn) continue;
+    btn.classList.toggle("active", String(btn.dataset.manageTab || "") === inventoryManageTab);
+  }
+  renderInventoryManageCategoryList();
+}
+
+function getInventoryManageTab() {
+  return inventoryManageTab || "category";
+}
+
+async function askInventoryChoice({ title, fields, saveLabel = "Save" }) {
+  if (!inventoryChoiceDialog || !inventoryChoiceFields || !Array.isArray(fields)) return null;
+  inventoryChoiceTitle.textContent = title || "Action";
+  inventoryChoiceSave.textContent = saveLabel;
+  inventoryChoiceFields.innerHTML = fields.map((field) => {
+    const id = `inventory-choice-${field.id}`;
+    if (field.type === "select") {
+      const options = (field.options || []).map((opt) => {
+        const value = String(opt.value ?? "");
+        const label = String(opt.label ?? value);
+        return `<option value="${escapeAttr(value)}" ${value === String(field.value ?? "") ? "selected" : ""}>${escapeHtml(label)}</option>`;
+      }).join("");
+      return `<label for="${id}">${escapeHtml(field.label || field.id)}<select id="${id}" data-choice-id="${escapeAttr(field.id)}">${options}</select></label>`;
+    }
+    return `<label for="${id}">${escapeHtml(field.label || field.id)}<input id="${id}" type="text" data-choice-id="${escapeAttr(field.id)}" value="${escapeAttr(field.value || "")}" placeholder="${escapeAttr(field.placeholder || "")}"></label>`;
+  }).join("");
+  if (inventoryChoiceDialog.open) inventoryChoiceDialog.close();
+  inventoryChoiceDialog.showModal();
+  return new Promise((resolve) => {
+    inventoryChoiceResolver = { resolve, fields };
+  });
+}
+
+function resolveInventoryChoice(ok) {
+  if (!inventoryChoiceResolver) return;
+  const { resolve, fields } = inventoryChoiceResolver;
+  inventoryChoiceResolver = null;
+  if (inventoryChoiceDialog?.open) inventoryChoiceDialog.close();
+  if (!ok) {
+    resolve(null);
+    return;
+  }
+  const values = {};
+  for (const field of fields || []) {
+    const el = inventoryChoiceFields?.querySelector(`[data-choice-id="${CSS.escape(String(field.id))}"]`);
+    values[field.id] = String(el?.value || "").trim();
+  }
+  resolve(values);
+}
+
 async function refreshInventoryLinkSummary(sourceItems = null) {
   try {
     let items = sourceItems;
@@ -1121,6 +1354,7 @@ async function refreshInventoryData() {
   state.inventory.lastUpdated = new Date().toISOString();
   if (inventoryLastUpdated) inventoryLastUpdated.textContent = `Last updated: ${inventoryNowLabel()}`;
   populateInventoryFilters();
+  renderInventoryManageCategoryList();
   ensureInventoryNewLinkedServiceOptions();
   await refreshInventoryLinkSummary(state.inventory.items);
   renderInventoryTable();
@@ -1308,6 +1542,7 @@ async function createInventoryProduct() {
     populateInventoryFilters();
     renderInventoryTable();
     await refreshInventoryLinkSummary();
+    if (inventoryAddDialog?.open) inventoryAddDialog.close();
   } catch (error) {
     setInventoryMessage("error", error.message);
   }
@@ -1369,8 +1604,19 @@ async function applyInventorySelectedAction() {
       }
       setInventoryMessage("success", `Deleted ${ids.length} product(s).`);
     } else if (action === "move") {
-      const targetCategory = window.prompt("Move selected products to category:", "") || "";
-      const category = targetCategory.trim();
+      const categories = inventoryManageCategoriesListValues();
+      const picked = await askInventoryChoice({
+        title: "Move Selected Products",
+        fields: [{
+          id: "category",
+          label: "Target category",
+          type: "select",
+          value: categories[0] || "",
+          options: categories.map((c) => ({ value: c, label: c }))
+        }],
+        saveLabel: "Move"
+      });
+      const category = String(picked?.category || "").trim();
       if (!category) return;
       for (const id of ids) {
         await api(`/api/inventory/${encodeURIComponent(id)}`, {
@@ -1405,11 +1651,252 @@ async function applyInventorySelectedAction() {
 async function openInventoryScreen() {
   setScreen("inventory");
   clearInventoryMessage();
+  if (!state.inventory.view) state.inventory.view = "list";
+  renderInventorySidebarState();
   if (inventoryPageSize) {
     state.inventory.pageSize = toSafeNumber(inventoryPageSize.value, 10);
   }
   ensureInventoryNewLinkedServiceOptions();
   await refreshInventoryData();
+}
+
+async function inventoryCategoryAddAction() {
+  const level = getInventoryManageTab();
+  if (level === "category") {
+    const picked = await askInventoryChoice({
+      title: "Add Category",
+      fields: [{ id: "name", label: "Category name", type: "text", placeholder: "Enter category name" }],
+      saveLabel: "Add"
+    });
+    const name = String(picked?.name || "").trim();
+    if (!name) return;
+    await api("/api/services/taxonomy/category", { method: "POST", body: JSON.stringify({ name }) });
+    await refreshServices();
+    await refreshInventoryData();
+    setInventoryMessage("success", `Category "${name}" added.`);
+    return;
+  }
+  if (level === "subcategory") {
+    const category = String(inventoryManageCategory || "").trim();
+    if (!category) {
+      setInventoryMessage("error", "Select a category first.");
+      return;
+    }
+    const picked = await askInventoryChoice({
+      title: "Add Subcategory",
+      fields: [{ id: "name", label: "Subcategory name", type: "text", placeholder: "Enter subcategory name" }],
+      saveLabel: "Add"
+    });
+    const name = String(picked?.name || "").trim();
+    if (!name) return;
+    await api("/api/services/taxonomy/subcategory", { method: "POST", body: JSON.stringify({ category, name }) });
+    await refreshServices();
+    await refreshInventoryData();
+    setInventoryMessage("success", `Subcategory "${name}" added.`);
+    return;
+  }
+  const category = String(inventoryManageCategory || "").trim();
+  const subcategory = String(inventoryManageSubcategory || "").trim();
+  if (!category || !subcategory) {
+    setInventoryMessage("error", "Select category and subcategory first.");
+    return;
+  }
+  const picked = await askInventoryChoice({
+    title: "Add Child Category",
+    fields: [{ id: "name", label: "Child name", type: "text", placeholder: "Enter child category name" }],
+    saveLabel: "Add"
+  });
+  const name = String(picked?.name || "").trim();
+  if (!name) return;
+  await api("/api/services/taxonomy/subsubcategory", { method: "POST", body: JSON.stringify({ category, subcategory, name }) });
+  await refreshServices();
+  await refreshInventoryData();
+  setInventoryMessage("success", `Child "${name}" added.`);
+}
+
+async function inventoryCategoryEditAction() {
+  const level = getInventoryManageTab();
+  if (level === "category") {
+    const oldName = String(inventoryManageCategory || "").trim();
+    if (!oldName) {
+      setInventoryMessage("error", "Select a category to edit.");
+      return;
+    }
+    const picked = await askInventoryChoice({
+      title: "Rename Category",
+      fields: [{ id: "newName", label: "New name", type: "text", value: oldName }],
+      saveLabel: "Save"
+    });
+    const newName = String(picked?.newName || "").trim();
+    if (!newName || newName === oldName) return;
+    await api("/api/services/taxonomy/category", { method: "PATCH", body: JSON.stringify({ oldName, newName }) });
+    await refreshServices();
+    await refreshInventoryData();
+    setInventoryMessage("success", `Category renamed to "${newName}".`);
+    return;
+  }
+  if (level === "subcategory") {
+    const category = String(inventoryManageCategory || "").trim();
+    const oldName = String(inventoryManageSubcategory || "").trim();
+    if (!category || !oldName) {
+      setInventoryMessage("error", "Select a subcategory to edit.");
+      return;
+    }
+    const picked = await askInventoryChoice({
+      title: "Rename Subcategory",
+      fields: [{ id: "newName", label: "New name", type: "text", value: oldName }],
+      saveLabel: "Save"
+    });
+    const newName = String(picked?.newName || "").trim();
+    if (!newName || newName === oldName) return;
+    await api("/api/services/taxonomy/subcategory", { method: "PATCH", body: JSON.stringify({ category, oldName, newName }) });
+    await refreshServices();
+    await refreshInventoryData();
+    setInventoryMessage("success", `Subcategory renamed to "${newName}".`);
+    return;
+  }
+  const category = String(inventoryManageCategory || "").trim();
+  const subcategory = String(inventoryManageSubcategory || "").trim();
+  const oldName = String(inventoryManageChild || "").trim();
+  if (!category || !subcategory || !oldName) {
+    setInventoryMessage("error", "Select a child category to edit.");
+    return;
+  }
+  const picked = await askInventoryChoice({
+    title: "Rename Child Category",
+    fields: [{ id: "newName", label: "New name", type: "text", value: oldName }],
+    saveLabel: "Save"
+  });
+  const newName = String(picked?.newName || "").trim();
+  if (!newName || newName === oldName) return;
+  await api("/api/services/taxonomy/subsubcategory", { method: "PATCH", body: JSON.stringify({ category, subcategory, oldName, newName }) });
+  await refreshServices();
+  await refreshInventoryData();
+  setInventoryMessage("success", `Child category renamed to "${newName}".`);
+}
+
+async function inventoryCategoryDeleteAction() {
+  const level = getInventoryManageTab();
+  if (level === "category") {
+    const name = String(inventoryManageCategory || "").trim();
+    if (!name) {
+      setInventoryMessage("error", "Select a category to delete.");
+      return;
+    }
+    const ok = await askActionConfirm("Delete Category", `Delete "${name}"?`);
+    if (!ok) return;
+    await api("/api/services/taxonomy/category", { method: "DELETE", body: JSON.stringify({ name }) });
+    await refreshServices();
+    await refreshInventoryData();
+    setInventoryMessage("success", `Category "${name}" deleted.`);
+    return;
+  }
+  if (level === "subcategory") {
+    const category = String(inventoryManageCategory || "").trim();
+    const name = String(inventoryManageSubcategory || "").trim();
+    if (!category || !name) {
+      setInventoryMessage("error", "Select a subcategory to delete.");
+      return;
+    }
+    const ok = await askActionConfirm("Delete Subcategory", `Delete "${name}"?`);
+    if (!ok) return;
+    await api("/api/services/taxonomy/subcategory", { method: "DELETE", body: JSON.stringify({ category, name }) });
+    await refreshServices();
+    await refreshInventoryData();
+    setInventoryMessage("success", `Subcategory "${name}" deleted.`);
+    return;
+  }
+  const category = String(inventoryManageCategory || "").trim();
+  const subcategory = String(inventoryManageSubcategory || "").trim();
+  const name = String(inventoryManageChild || "").trim();
+  if (!category || !subcategory || !name) {
+    setInventoryMessage("error", "Select a child category to delete.");
+    return;
+  }
+  const ok = await askActionConfirm("Delete Child Category", `Delete "${name}"?`);
+  if (!ok) return;
+  await api("/api/services/taxonomy/subsubcategory", { method: "DELETE", body: JSON.stringify({ category, subcategory, name }) });
+  await refreshServices();
+  await refreshInventoryData();
+  setInventoryMessage("success", `Child category "${name}" deleted.`);
+}
+
+async function inventoryCategoryMoveAction() {
+  const level = getInventoryManageTab();
+  if (level === "category") {
+    setInventoryMessage("error", "Move is available for subcategory and child only.");
+    return;
+  }
+  if (level === "subcategory") {
+    const fromCategory = String(inventoryManageCategory || "").trim();
+    const fromSubcategory = String(inventoryManageSubcategory || "").trim();
+    if (!fromCategory || !fromSubcategory) {
+      setInventoryMessage("error", "Select a subcategory to move.");
+      return;
+    }
+    const categories = inventoryManageCategoriesListValues();
+    const picked = await askInventoryChoice({
+      title: "Move Subcategory",
+      fields: [
+        {
+          id: "toCategory",
+          label: "Target category",
+          type: "select",
+          value: fromCategory,
+          options: categories.map((c) => ({ value: c, label: c }))
+        },
+        { id: "toSubcategory", label: "Target subcategory", type: "text", value: fromSubcategory }
+      ],
+      saveLabel: "Move"
+    });
+    const toCategory = String(picked?.toCategory || "").trim();
+    const toSubcategory = String(picked?.toSubcategory || "").trim();
+    if (!toSubcategory) return;
+    await api("/api/services/taxonomy/subcategory/transfer", {
+      method: "PATCH",
+      body: JSON.stringify({ fromCategory, fromSubcategory, toCategory, toSubcategory })
+    });
+    await refreshServices();
+    await refreshInventoryData();
+    setInventoryMessage("success", `Subcategory moved to ${toCategory} / ${toSubcategory}.`);
+    return;
+  }
+  const fromCategory = String(inventoryManageCategory || "").trim();
+  const fromSubcategory = String(inventoryManageSubcategory || "").trim();
+  const fromName = String(inventoryManageChild || "").trim();
+  if (!fromCategory || !fromSubcategory || !fromName) {
+    setInventoryMessage("error", "Select a child category to move.");
+    return;
+  }
+  const categories = inventoryManageCategoriesListValues();
+  const picked = await askInventoryChoice({
+    title: "Move Child Category",
+    fields: [
+      {
+        id: "toCategory",
+        label: "Target category",
+        type: "select",
+        value: fromCategory,
+        options: categories.map((c) => ({ value: c, label: c }))
+      },
+      { id: "toSubcategory", label: "Target subcategory", type: "text", value: fromSubcategory },
+      { id: "toName", label: "Target child", type: "text", value: fromName }
+    ],
+    saveLabel: "Move"
+  });
+  const toCategory = String(picked?.toCategory || "").trim();
+  if (!toCategory) return;
+  const toSubcategory = String(picked?.toSubcategory || "").trim();
+  if (!toSubcategory) return;
+  const toName = String(picked?.toName || "").trim();
+  if (!toName) return;
+  await api("/api/services/taxonomy/subsubcategory/transfer", {
+    method: "PATCH",
+    body: JSON.stringify({ fromCategory, fromSubcategory, fromName, toCategory, toSubcategory, toName })
+  });
+  await refreshServices();
+  await refreshInventoryData();
+  setInventoryMessage("success", `Child moved to ${toCategory} / ${toSubcategory} / ${toName}.`);
 }
 
 async function openRegisterScreen() {
@@ -1421,9 +1908,9 @@ async function openRegisterScreen() {
   await refreshSummary();
 }
 
-async function openServicesManagerFromNav() {
+async function openServicesManagerFromNav(route = "services") {
   await openRegisterScreen();
-  setActiveNavRoute("services");
+  setActiveNavRoute(route);
   updateAppHeader();
   renderServiceAdmin();
   servicesDialog.showModal();
@@ -1434,6 +1921,7 @@ function logoutToLogin() {
   state.cart = [];
   state.saleLocked = false;
   state.lastTransaction = null;
+  updateDashboardWelcome();
   setScreen("login");
 }
 
@@ -1491,6 +1979,109 @@ function setReportsPreset(preset) {
   }
   if (reportsRangePicker) reportsRangePicker.value = reportsRangeEnd;
   updateReportsRangeSummary();
+}
+
+function dashboardDateRangeFromPreset(preset) {
+  const today = todayLocalKey();
+  const safePreset = String(preset || "today").trim().toLowerCase();
+  if (safePreset === "all") {
+    return { startDate: "1970-01-01", endDate: today };
+  }
+  if (safePreset === "yesterday") {
+    const y = addDaysToDateKey(today, -1);
+    return { startDate: y, endDate: y };
+  }
+  if (safePreset === "last7") {
+    return { startDate: addDaysToDateKey(today, -6), endDate: today };
+  }
+  if (safePreset === "month") {
+    return { startDate: monthStartFromDateKey(today), endDate: today };
+  }
+  if (safePreset === "year") {
+    const year = String(today).slice(0, 4);
+    return { startDate: `${year}-01-01`, endDate: today };
+  }
+  return { startDate: today, endDate: today };
+}
+
+function renderDashboardReports(payload) {
+  if (!payload) return;
+  const totals = payload.totals || {};
+  const cashMovements = payload.cashMovements || {};
+  const cashIn = cashMovements.cashIn || {};
+  const cashOut = cashMovements.cashOut || {};
+
+  if (dashboardTotalSales) dashboardTotalSales.textContent = peso.format(Number(totals.totalSales || 0));
+  if (dashboardTransactionCount) dashboardTransactionCount.textContent = `${Number(totals.transactionCount || 0)} transaction(s)`;
+  if (dashboardCashInTotal) dashboardCashInTotal.textContent = peso.format(Number(cashIn.total || 0));
+  if (dashboardCashOutTotal) dashboardCashOutTotal.textContent = peso.format(Number(cashOut.total || 0));
+  if (dashboardNetCash) dashboardNetCash.textContent = peso.format(Number(cashMovements.net || 0));
+
+  if (dashboardReportsServiceBody) {
+    dashboardReportsServiceBody.innerHTML = rowOrEmpty(
+      (payload.salesByService || []).map((row) => `
+        <tr>
+          <td>${escapeHtml(row.serviceName || "")}</td>
+          <td class="num-col">${Number(row.qty || 0)}</td>
+          <td class="num-col">${peso.format(Number(row.sales || 0))}</td>
+        </tr>
+      `).join(""),
+      3,
+      "No service sales in this date range."
+    );
+  }
+
+  if (dashboardReportsTopBody) {
+    dashboardReportsTopBody.innerHTML = rowOrEmpty(
+      (payload.topServices || []).map((row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(row.serviceName || "")}</td>
+          <td class="num-col">${peso.format(Number(row.sales || 0))}</td>
+        </tr>
+      `).join(""),
+      3,
+      "No top services yet."
+    );
+  }
+
+  if (dashboardReportsPaymentBody) {
+    dashboardReportsPaymentBody.innerHTML = rowOrEmpty(
+      (payload.paymentBreakdown || []).map((row) => `
+        <tr>
+          <td>${escapeHtml(row.paymentMethod || "")}</td>
+          <td class="num-col">${Number(row.transactionCount || 0)}</td>
+          <td class="num-col">${peso.format(Number(row.sales || 0))}</td>
+        </tr>
+      `).join(""),
+      3,
+      "No payments in this date range."
+    );
+  }
+
+  if (dashboardReportsCashBody) {
+    dashboardReportsCashBody.innerHTML = rowOrEmpty(
+      (payload.cashMovementEntries || []).map((row) => `
+        <tr>
+          <td>${escapeHtml(row.date || "")} ${escapeHtml(row.time || "")}</td>
+          <td>${row.type === "in" ? "Cash In" : "Cash Out"}</td>
+          <td class="num-col">${peso.format(Number(row.amount || 0))}</td>
+          <td>${escapeHtml(row.note || "-")}</td>
+        </tr>
+      `).join(""),
+      4,
+      "No cash movement entries in this date range."
+    );
+  }
+}
+
+async function refreshDashboardReports() {
+  if (!dashboardRangeFilter) return;
+  if (dashboardReportsError) dashboardReportsError.textContent = "";
+  const preset = String(dashboardRangeFilter.value || "all").trim().toLowerCase();
+  const range = dashboardDateRangeFromPreset(preset);
+  const payload = await api(`/api/reports?startDate=${encodeURIComponent(range.startDate)}&endDate=${encodeURIComponent(range.endDate)}`);
+  renderDashboardReports(payload);
 }
 
 function exportReportsCsv() {
@@ -3947,6 +4538,7 @@ loginForm.addEventListener("submit", async (e) => {
     state.currentStaff = payload.staff;
     activeStaffName.textContent = payload.staff.name;
     activeStaffRole.textContent = payload.staff.role;
+    updateDashboardWelcome();
     staffPin.value = "";
     setScreen("dashboard");
     updateClock();
@@ -3956,32 +4548,25 @@ loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-dashboardTiles.addEventListener("click", async (e) => {
-  const b = e.target.closest(".tile");
-  if (!b) return;
-  if (b.dataset.action === "register") {
-    await openRegisterScreen();
-    return;
-  }
-  if (b.dataset.action === "catalog") {
-    await openServicesManagerFromNav();
-    return;
-  }
-  if (b.dataset.action === "reports") {
-    await openReportsDialog();
-    return;
-  }
-  if (b.dataset.action === "inventory") {
-    await refreshServices();
-    await openInventoryScreen();
-    return;
-  }
-  if (b.dataset.action === "transactions") {
-    await openTransactionsDialog();
-    return;
-  }
-  window.alert("Module draft will be built next.");
-});
+if (dashboardTiles) {
+  dashboardTiles.addEventListener("click", async (e) => {
+    const b = e.target.closest(".tile");
+    if (!b) return;
+    await handleSidebarRoute(String(b.dataset.action || ""));
+  });
+}
+
+if (dashboardRangeFilter) {
+  dashboardRangeFilter.value = state.dashboardReports.range || "all";
+  dashboardRangeFilter.addEventListener("change", async () => {
+    state.dashboardReports.range = String(dashboardRangeFilter.value || "all");
+    try {
+      await refreshDashboardReports();
+    } catch (error) {
+      if (dashboardReportsError) dashboardReportsError.textContent = error.message;
+    }
+  });
+}
 
 async function handleSidebarRoute(route) {
   if (!route) return;
@@ -4004,6 +4589,10 @@ async function handleSidebarRoute(route) {
     await openServicesManagerFromNav();
     return;
   }
+  if (route === "catalog") {
+    await openServicesManagerFromNav("catalog");
+    return;
+  }
   if (route === "reports") {
     await openReportsDialog();
     return;
@@ -4012,7 +4601,15 @@ async function handleSidebarRoute(route) {
     await openTransactionsDialog();
     return;
   }
+  if (route === "terminal" || route === "settlement" || route === "manual" || route === "invoicing" || route === "orders" || route === "help") {
+    setActiveNavRoute(route);
+    updateAppHeader();
+    window.alert("Module draft will be built next.");
+    return;
+  }
   if (route === "settings") {
+    setActiveNavRoute(route);
+    updateAppHeader();
     window.alert("Settings module placeholder.");
     return;
   }
@@ -4063,15 +4660,19 @@ window.addEventListener("resize", () => {
   }
 });
 
-goDashboard.addEventListener("click", () => {
-  setScreen("dashboard");
-  updateClock();
-  refreshSummary().catch(() => {});
-});
+if (goDashboard) {
+  goDashboard.addEventListener("click", () => {
+    setScreen("dashboard");
+    updateClock();
+    refreshSummary().catch(() => {});
+  });
+}
 
-logoutBtn.addEventListener("click", () => {
-  logoutToLogin();
-});
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    logoutToLogin();
+  });
+}
 
 if (inventorySideDashboard) {
   inventorySideDashboard.addEventListener("click", () => {
@@ -4115,8 +4716,170 @@ if (inventoryRefresh) {
   });
 }
 
+if (inventoryOpenAdd) {
+  inventoryOpenAdd.addEventListener("click", openInventoryAddDialog);
+}
+
 if (inventoryAddBtn) {
   inventoryAddBtn.addEventListener("click", createInventoryProduct);
+}
+
+if (inventoryAddCancel) {
+  inventoryAddCancel.addEventListener("click", () => {
+    if (inventoryAddDialog?.open) inventoryAddDialog.close();
+  });
+}
+
+if (inventoryAddDialog) {
+  inventoryAddDialog.addEventListener("cancel", () => {
+    if (inventoryAddDialog.open) inventoryAddDialog.close();
+  });
+}
+
+if (inventoryManageCategories) {
+  inventoryManageCategories.addEventListener("click", async () => {
+    await refreshServices();
+    setInventoryManageTab("category");
+    if (inventoryManageCategoriesDialog?.open) inventoryManageCategoriesDialog.close();
+    inventoryManageCategoriesDialog?.showModal();
+  });
+}
+
+if (inventoryManageSubcategories) {
+  inventoryManageSubcategories.addEventListener("click", async () => {
+    await refreshServices();
+    setInventoryManageTab("subcategory");
+    if (inventoryManageCategoriesDialog?.open) inventoryManageCategoriesDialog.close();
+    inventoryManageCategoriesDialog?.showModal();
+  });
+}
+
+if (inventoryGroupCategory) {
+  inventoryGroupCategory.addEventListener("click", () => {
+    state.inventory.groups.category = !state.inventory.groups.category;
+    renderInventorySidebarState();
+  });
+}
+
+if (inventoryGroupProduct) {
+  inventoryGroupProduct.addEventListener("click", () => {
+    state.inventory.groups.product = !state.inventory.groups.product;
+    renderInventorySidebarState();
+  });
+}
+
+for (const item of inventorySubmenuItems) {
+  item.addEventListener("click", async () => {
+    const view = String(item.dataset.inventoryView || "list");
+    setInventoryView(view);
+    if (view === "add") {
+      openInventoryAddDialog();
+    }
+    if (view === "list") {
+      renderInventoryTable();
+    }
+  });
+}
+
+if (inventoryImportPlaceholder) {
+  inventoryImportPlaceholder.addEventListener("click", () => {
+    setInventoryMessage("success", "Bulk Import placeholder is ready.");
+  });
+}
+
+if (inventoryExportCsv) {
+  inventoryExportCsv.addEventListener("click", () => {
+    const rows = [
+      ["Product", "SKU", "Category", "Unit", "On Hand", "Reorder", "Actual Cost", "Selling Price", "Supplier", "Linked Service", "Active"]
+    ];
+    for (const item of state.inventory.items || []) {
+      rows.push([
+        item.product_name || "",
+        item.sku || "",
+        item.category || "",
+        item.unit || "",
+        String(item.stock_qty ?? 0),
+        String(item.reorder_level ?? 0),
+        String(item.actual_cost ?? 0),
+        String(item.selling_price ?? 0),
+        item.supplier || "",
+        inventoryLinkedServiceName(item.linked_service_id || ""),
+        item.is_active ? "Yes" : "No"
+      ]);
+    }
+    downloadCsv(`inventory-${todayLocalKey()}.csv`, rows);
+    setInventoryMessage("success", "Inventory exported.");
+  });
+}
+
+if (inventoryTabCategory) {
+  inventoryTabCategory.addEventListener("click", () => setInventoryManageTab("category"));
+}
+if (inventoryTabSubcategory) {
+  inventoryTabSubcategory.addEventListener("click", () => setInventoryManageTab("subcategory"));
+}
+if (inventoryTabChild) {
+  inventoryTabChild.addEventListener("click", () => setInventoryManageTab("child"));
+}
+
+if (inventoryManageCategoryList) {
+  inventoryManageCategoryList.addEventListener("change", () => {
+    inventoryManageCategory = String(inventoryManageCategoryList.value || "").trim();
+    inventoryManageSubcategory = "";
+    inventoryManageChild = "";
+    renderInventoryManageCategoryList();
+  });
+}
+
+if (inventoryManageSubcategoryList) {
+  inventoryManageSubcategoryList.addEventListener("change", () => {
+    inventoryManageSubcategory = String(inventoryManageSubcategoryList.value || "").trim();
+    inventoryManageChild = "";
+    renderInventoryManageCategoryList();
+  });
+}
+
+if (inventoryManageChildList) {
+  inventoryManageChildList.addEventListener("change", () => {
+    inventoryManageChild = String(inventoryManageChildList.value || "").trim();
+    renderInventoryManageCategoryList();
+  });
+}
+
+if (inventoryCategoryAdd) {
+  inventoryCategoryAdd.addEventListener("click", async () => {
+    await inventoryCategoryAddAction();
+  });
+}
+
+if (inventoryCategoryEdit) {
+  inventoryCategoryEdit.addEventListener("click", async () => {
+    await inventoryCategoryEditAction();
+  });
+}
+
+if (inventoryCategoryDelete) {
+  inventoryCategoryDelete.addEventListener("click", async () => {
+    await inventoryCategoryDeleteAction();
+  });
+}
+
+if (inventoryCategoryMove) {
+  inventoryCategoryMove.addEventListener("click", async () => {
+    await inventoryCategoryMoveAction();
+  });
+}
+
+if (inventoryCategoryClose) {
+  inventoryCategoryClose.addEventListener("click", () => {
+    if (inventoryManageCategoriesDialog?.open) inventoryManageCategoriesDialog.close();
+  });
+}
+
+if (inventoryManageCategoriesDialog) {
+  inventoryManageCategoriesDialog.addEventListener("cancel", () => {
+    if (inventoryManageCategoriesDialog.open) inventoryManageCategoriesDialog.close();
+  });
 }
 
 if (inventorySearch) {
@@ -4229,6 +4992,16 @@ if (inventoryAdjustApply) {
       note: String(inventoryAdjustNote?.value || "").trim()
     });
   });
+}
+
+if (inventoryChoiceCancel) {
+  inventoryChoiceCancel.addEventListener("click", () => resolveInventoryChoice(false));
+}
+if (inventoryChoiceSave) {
+  inventoryChoiceSave.addEventListener("click", () => resolveInventoryChoice(true));
+}
+if (inventoryChoiceDialog) {
+  inventoryChoiceDialog.addEventListener("cancel", () => resolveInventoryChoice(false));
 }
 
 if (cashMovementBtn) {
@@ -5604,6 +6377,21 @@ document.addEventListener("keydown", (e) => {
   }
 
   if (key !== "escape") return;
+  if (inventoryAddDialog?.open) {
+    e.preventDefault();
+    inventoryAddDialog.close();
+    return;
+  }
+  if (inventoryManageCategoriesDialog?.open) {
+    e.preventDefault();
+    inventoryManageCategoriesDialog.close();
+    return;
+  }
+  if (inventoryChoiceDialog?.open) {
+    e.preventDefault();
+    resolveInventoryChoice(false);
+    return;
+  }
   if (inventoryAdjustDialog?.open) {
     e.preventDefault();
     resolveInventoryAdjust(null);
@@ -5638,6 +6426,7 @@ async function init() {
   state.deletedServiceIds = loadDeletedServiceIds();
   initializeSidebarState();
   setPayment("cash");
+  updateDashboardWelcome();
   setScreen("login");
   updateClock();
   try {
@@ -5654,5 +6443,5 @@ async function init() {
   }
 }
 
-setInterval(updateClock, 30000);
+setInterval(updateClock, 1000);
 init();
