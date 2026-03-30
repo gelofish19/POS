@@ -5690,15 +5690,7 @@ serviceTransferSave.addEventListener("click", () => resolveServiceTransfer({
 serviceTransferDialog.addEventListener("cancel", () => resolveServiceTransfer(null));
 
 manageServicesBtn.addEventListener("click", async () => {
-  selectedManageCategory = "";
-  selectedManageSubcategory = "";
-  selectedManageSubsubcategory = "";
-  selectedManageServiceId = "";
-  selectedManageServiceIds = {};
-  await refreshServices();
-  renderServiceAdmin();
-  setAdminStep(1);
-  servicesDialog.showModal();
+  await openInventoryScreen();
 });
 
 adminFilterCategory.addEventListener("change", () => {
