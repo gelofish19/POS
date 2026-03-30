@@ -11,6 +11,7 @@ const SUBCATEGORY_STATUS_KEY = "pos_subcategory_status_v1";
 const SUBSUBCATEGORY_OVERRIDES_KEY = "pos_subsubcategory_overrides_v1";
 const DELETED_SERVICE_IDS_KEY = "pos_deleted_service_ids_v1";
 const SIDEBAR_COLLAPSED_KEY = "pos_sidebar_collapsed";
+const THEME_MODE_KEY = "pos_theme_mode";
 const MOBILE_SIDEBAR_BREAKPOINT = 1100;
 
 const state = {
@@ -54,9 +55,29 @@ const appSidebar = document.getElementById("app-sidebar");
 const appBackdrop = document.getElementById("app-backdrop");
 const sidebarToggle = document.getElementById("sidebar-toggle");
 const sidebarCollapseToggle = document.getElementById("sidebar-collapse-toggle");
+const topBannerStaffName = document.getElementById("top-banner-staff-name");
+const topBannerStaffRole = document.getElementById("top-banner-staff-role");
+const topBannerDate = document.getElementById("top-banner-date");
+const topBannerTime = document.getElementById("top-banner-time");
+const topBannerLiveChip = document.querySelector(".top-banner-live-chip");
+const topBannerTools = document.querySelector(".top-banner-tools");
+const topToolCalculator = document.getElementById("top-tool-calculator");
+const topToolShortcuts = document.getElementById("top-tool-shortcuts");
+const topToolFullscreen = document.getElementById("top-tool-fullscreen");
+const topThemeToggle = document.getElementById("top-theme-toggle");
+const topThemeSunIcon = topThemeToggle ? topThemeToggle.querySelector(".theme-icon-sun") : null;
+const topThemeMoonIcon = topThemeToggle ? topThemeToggle.querySelector(".theme-icon-moon") : null;
+const calculatorPanel = document.getElementById("calculator-panel");
+const calculatorDisplay = document.getElementById("calculator-display");
+const calculatorClose = document.getElementById("calculator-close");
+const shortcutsPanel = document.getElementById("shortcuts-panel");
+const shortcutsClose = document.getElementById("shortcuts-close");
 const headerScreenKicker = document.getElementById("header-screen-kicker");
 const headerScreenTitle = document.getElementById("header-screen-title");
 const sidebarNavItems = Array.from(document.querySelectorAll(".sidebar-nav-item[data-route]"));
+const sidebarRailItems = Array.from(document.querySelectorAll(".sidebar-rail-item[data-section]"));
+const sidebarSections = Array.from(document.querySelectorAll(".sidebar-section[data-section-panel]"));
+const inventoryNavNested = document.getElementById("inventory-nav-nested");
 
 const loginScreen = document.getElementById("login-screen");
 const dashboardScreen = document.getElementById("dashboard-screen");
@@ -69,9 +90,7 @@ const loginError = document.getElementById("login-error");
 const activeStaffName = document.getElementById("active-staff-name");
 const activeStaffRole = document.getElementById("active-staff-role");
 const dashboardWelcomeTitle = document.getElementById("dashboard-welcome-title");
-const dashboardWelcomeRole = document.getElementById("dashboard-welcome-role");
-const dashDate = document.getElementById("dash-date");
-const dashTime = document.getElementById("dash-time");
+const dashboardWelcomeSubtitle = document.getElementById("dashboard-welcome-subtitle");
 const dashboardRangeFilter = document.getElementById("dashboard-range-filter");
 const dashboardReportsError = document.getElementById("dashboard-reports-error");
 const dashboardTotalSales = document.getElementById("dashboard-total-sales");
@@ -520,18 +539,18 @@ function sortSubcategoriesForCategory(category, values) {
 
 function iconSvg(kind) {
   if (kind === "add") {
-    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" fill="currentColor"></path></svg>`;
+    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"></path></svg>`;
   }
   if (kind === "edit") {
-    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25Zm14.7-9.04a1 1 0 0 0 0-1.41l-1.5-1.5a1 1 0 0 0-1.41 0l-1.17 1.17 2.75 2.75 1.33-1.01Z" fill="currentColor"></path></svg>`;
+    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a2.25 2.25 0 1 1 3.182 3.182L10.582 17.13a4.5 4.5 0 0 1-1.897 1.13l-3.24 1.08 1.08-3.24a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z"></path></svg>`;
   }
   if (kind === "toggle") {
-    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 5h8a7 7 0 0 1 0 14H8A7 7 0 0 1 8 5Zm0 2a5 5 0 1 0 0 10h8a5 5 0 0 0 0-10H8Zm0 1a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" fill="currentColor"></path></svg>`;
+    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 12a6.75 6.75 0 1 0 13.5 0 6.75 6.75 0 1 0-13.5 0Zm6.75-4.5v4.5l3 3"></path></svg>`;
   }
   if (kind === "move") {
-    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M13 5h6v6h-2V8.41l-5.29 5.3-1.42-1.42L15.59 7H13V5ZM5 6h5v2H7v9h9v-3h2v5H5V6Z" fill="currentColor"></path></svg>`;
+    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25 3.75 12l3.75 3.75M16.5 8.25 20.25 12l-3.75 3.75M14.25 6 9.75 18"></path></svg>`;
   }
-  return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v8h-2V9Zm4 0h2v8h-2V9ZM7 9h2v8H7V9Z" fill="currentColor"></path></svg>`;
+  return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673A2.25 2.25 0 0 1 15.916 21H8.084a2.25 2.25 0 0 1-2.244-2.327L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.06.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0V4.5A2.25 2.25 0 0 0 13.5 2.25h-3A2.25 2.25 0 0 0 8.25 4.5v.893"></path></svg>`;
 }
 
 function mergedTaxonomyLocal(services, taxonomy) {
@@ -1044,7 +1063,7 @@ function getScreenTitle(screen) {
 function getRouteTitle(route) {
   const titles = {
     dashboard: "Dashboard",
-    register: "Register",
+    register: "POS Terminal",
     inventory: "Inventory",
     services: "Services",
     reports: "Reports",
@@ -1055,6 +1074,22 @@ function getRouteTitle(route) {
     catalog: "Catalog",
     invoicing: "Invoicing",
     orders: "Orders",
+    customers: "Customers",
+    products: "Products",
+    categories: "Categories",
+    "stock-adjustments": "Stock Adjustments",
+    barcodes: "Barcodes",
+    "shipping-methods": "Shipping Methods",
+    coupons: "Coupons",
+    "tax-management": "Tax Management",
+    "member-directory": "Member Directory",
+    "access-roles": "Access Roles",
+    "my-profile": "My Profile",
+    "business-rebranding": "Business Rebranding",
+    "legal-center": "Legal Center",
+    "pos-settings": "POS Settings",
+    "activity-log": "Activity Log",
+    support: "Support",
     help: "Help",
     settings: "Settings"
   };
@@ -1066,6 +1101,13 @@ function setActiveNavRoute(route) {
   for (const item of sidebarNavItems) {
     item.classList.toggle("active", item.dataset.route === state.activeNavRoute);
   }
+  const activeButton = appSidebar?.querySelector(`.sidebar-nav-item[data-route="${state.activeNavRoute}"]`);
+  const activeSection = activeButton ? activeButton.closest(".sidebar-section") : null;
+  const activeSectionName = activeSection ? String(activeSection.dataset.sectionPanel || "") : "";
+  if (activeSectionName) setSidebarSection(activeSectionName);
+  if (inventoryNavNested) {
+    inventoryNavNested.classList.toggle("hidden", state.activeNavRoute !== "inventory");
+  }
 }
 
 function updateAppHeader() {
@@ -1075,16 +1117,116 @@ function updateAppHeader() {
 }
 
 function updateDashboardWelcome() {
-  if (!dashboardWelcomeTitle) return;
   const staffName = String(state.currentStaff?.name || "Staff").trim() || "Staff";
   const staffRole = String(state.currentStaff?.role || "Cashier").trim() || "Cashier";
-  dashboardWelcomeTitle.textContent = `Welcome back, ${staffName}`;
-  if (dashboardWelcomeRole) dashboardWelcomeRole.textContent = staffRole;
+  const lowerRole = staffRole.toLowerCase();
+  const profileLabel = lowerRole.includes("admin") ? "Super Admin" : staffName;
+  const hour = new Date().getHours();
+  const partOfDay = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
+  if (dashboardWelcomeTitle) dashboardWelcomeTitle.textContent = `Good ${partOfDay}, ${profileLabel}!`;
+  if (dashboardWelcomeSubtitle) dashboardWelcomeSubtitle.textContent = "Here's your business overview for today.";
+  if (topBannerStaffName) topBannerStaffName.textContent = staffName;
+  if (topBannerStaffRole) topBannerStaffRole.textContent = staffRole;
+}
+
+function sidebarRouteIconPath(route) {
+  const icons = {
+    dashboard: "m2.25 12 8.954-8.955a1.125 1.125 0 0 1 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75V15h4.5v6h4.125c.621 0 1.125-.504 1.125-1.125V9.75",
+    register: "M19.5 6.75v10.5A2.25 2.25 0 0 1 17.25 19.5H6.75A2.25 2.25 0 0 1 4.5 17.25V6.75A2.25 2.25 0 0 1 6.75 4.5h10.5A2.25 2.25 0 0 1 19.5 6.75ZM8.25 9h7.5m-7.5 3h7.5m-7.5 3h4.5",
+    orders: "M2.25 3h1.386c.51 0 .955.343 1.086.836L5.1 5.25m0 0h13.275a1.125 1.125 0 0 1 1.09 1.402l-1.2 4.5a1.125 1.125 0 0 1-1.09.848H8.07a1.125 1.125 0 0 1-1.09-.848L5.1 5.25ZM8.25 18a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm9 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z",
+    customers: "M17 20a4 4 0 0 0-8 0m8 0H7m10 0h3m-3 0a4 4 0 1 0-3.98-4.5M7 20H4m3 0a4 4 0 1 1 3.98-4.5M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm7 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+    products: "m20.25 7.5-8.25 4.5m8.25-4.5-8.25-4.5m8.25 4.5v9l-8.25 4.5m-8.25-13.5 8.25 4.5m-8.25-4.5 8.25-4.5m-8.25 4.5v9l8.25 4.5",
+    categories: "M3.75 7.5A2.25 2.25 0 0 1 6 5.25h4.034c.378 0 .74.15 1.007.418l1.286 1.286c.267.267.629.418 1.007.418H18A2.25 2.25 0 0 1 20.25 9.6v6.9A2.25 2.25 0 0 1 18 18.75H6A2.25 2.25 0 0 1 3.75 16.5v-9Z",
+    "stock-adjustments": "M12 18V6m6 6H6",
+    barcodes: "M5.25 7.5v9m3-9v9m3-9v9m3-9v9m3-9v9m3-9v9",
+    "shipping-methods": "M3.75 7.5h10.5v9H3.75v-9Zm10.5 2.25h3.22a1.5 1.5 0 0 1 1.34.83l1.19 2.42v3.5h-5.75v-6.75Z",
+    coupons: "M9 9h.008v.008H9V9Zm6 6h.008v.008H15V15ZM7.5 4.5h9A2.25 2.25 0 0 1 18.75 6.75v10.5A2.25 2.25 0 0 1 16.5 19.5h-9a2.25 2.25 0 0 1-2.25-2.25v-10.5A2.25 2.25 0 0 1 7.5 4.5Zm7.5-1.5L9 21",
+    "tax-management": "M7.5 4.5h9A2.25 2.25 0 0 1 18.75 6.75v10.5A2.25 2.25 0 0 1 16.5 19.5h-9a2.25 2.25 0 0 1-2.25-2.25V6.75A2.25 2.25 0 0 1 7.5 4.5Zm3.75 3h4.5m-4.5 3h4.5m-4.5 3h2.25",
+    reports: "M3.75 3v18h16.5M7.5 15.75v-3m4.5 3v-6m4.5 6V9",
+    services: "M11.42 3.99a6 6 0 0 0 8.59 8.59l-7.72 7.72a2.25 2.25 0 1 1-3.18-3.18l7.72-7.72a6 6 0 0 0-8.59-8.59l2.12 2.12-1.41 1.41-2.53-2.35Z",
+    transactions: "M2.25 8.25A2.25 2.25 0 0 1 4.5 6h15A2.25 2.25 0 0 1 21.75 8.25v7.5A2.25 2.25 0 0 1 19.5 18h-15a2.25 2.25 0 0 1-2.25-2.25v-7.5ZM2.25 10.5h19.5m-15 4.5h3",
+    terminal: "M3.75 5.25A2.25 2.25 0 0 1 6 3h12a2.25 2.25 0 0 1 2.25 2.25v9A2.25 2.25 0 0 1 18 16.5H6a2.25 2.25 0 0 1-2.25-2.25v-9Zm6 14.25h4.5M8.25 21h7.5",
+    settlement: "M3.75 7.5A2.25 2.25 0 0 1 6 5.25h12A2.25 2.25 0 0 1 20.25 7.5v9A2.25 2.25 0 0 1 18 18.75H6A2.25 2.25 0 0 1 3.75 16.5v-9Zm4.5-2.25v-1.5A2.25 2.25 0 0 1 10.5 1.5h3A2.25 2.25 0 0 1 15.75 3.75v1.5",
+    manual: "m16.862 4.487 1.687-1.688a2.25 2.25 0 1 1 3.182 3.182L10.582 17.13a4.5 4.5 0 0 1-1.897 1.13l-3.24 1.08 1.08-3.24a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z",
+    invoicing: "M7.5 4.5h9A2.25 2.25 0 0 1 18.75 6.75v10.5A2.25 2.25 0 0 1 16.5 19.5h-9a2.25 2.25 0 0 1-2.25-2.25V6.75A2.25 2.25 0 0 1 7.5 4.5Zm1.5 3h6m-6 3h1.5m3 0H15m-6 3h1.5m3 0H15",
+    "member-directory": "M17 20a4 4 0 0 0-8 0m8 0H7m10 0h3m-3 0a4 4 0 1 0-3.98-4.5M7 20H4m3 0a4 4 0 1 1 3.98-4.5M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm7 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+    "access-roles": "M15 9a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
+    "my-profile": "M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 1 1 15 0",
+    "business-rebranding": "M16.862 4.487 21 8.625m-4.138-4.138L6.75 14.6V18.75h4.15L21 8.625",
+    "legal-center": "M12 3v18m9-9H3m15.75-5.25-13.5 10.5",
+    "pos-settings": "M10.343 3.94c.09-.542.56-.94 1.11-.94h1.094c.55 0 1.02.398 1.11.94l.213 1.279c.063.38.313.7.66.878.346.177.754.187 1.108.017l1.192-.57a1.125 1.125 0 0 1 1.37.347l.547.948a1.125 1.125 0 0 1-.224 1.432l-.98.84a1.125 1.125 0 0 0-.365 1.05c.053.377.053.76 0 1.137a1.125 1.125 0 0 0 .365 1.05l.98.84a1.125 1.125 0 0 1 .224 1.432l-.547.948a1.125 1.125 0 0 1-1.37.347l-1.192-.57a1.125 1.125 0 0 0-1.108.017 1.125 1.125 0 0 0-.66.878l-.213 1.28a1.125 1.125 0 0 1-1.11.939h-1.094a1.125 1.125 0 0 1-1.11-.94l-.213-1.279a1.125 1.125 0 0 0-.66-.878 1.125 1.125 0 0 0-1.108-.017l-1.192.57a1.125 1.125 0 0 1-1.37-.347l-.547-.948a1.125 1.125 0 0 1 .224-1.432l.98-.84c.29-.249.426-.632.365-1.05a8.78 8.78 0 0 1 0-1.137 1.125 1.125 0 0 0-.365-1.05l-.98-.84a1.125 1.125 0 0 1-.224-1.432l.547-.948a1.125 1.125 0 0 1 1.37-.347l1.192.57c.354.17.762.16 1.108-.017.347-.177.597-.499.66-.878l.213-1.28Z",
+    "activity-log": "M12 6v6l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
+    logout: "M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-7.5a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 6 21h7.5a2.25 2.25 0 0 0 2.25-2.25V15m-6-3h12m0 0-3-3m3 3-3 3"
+  };
+  return icons[route] || icons.dashboard;
+}
+
+function applySidebarRouteIcons() {
+  for (const button of sidebarNavItems) {
+    const route = String(button.dataset.route || "").trim();
+    const iconBox = button.querySelector(".sidebar-nav-icon");
+    if (!iconBox || !route) continue;
+    const path = sidebarRouteIconPath(route);
+    iconBox.innerHTML = `<svg viewBox="0 0 24 24" class="heroicon" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="${path}"/></svg>`;
+  }
 }
 
 function initializeSidebarState() {
   setSidebarCollapsed(loadSidebarCollapsed(), false);
   setSidebarDrawerOpen(false);
+  initializeSidebarSections();
+}
+
+function setSidebarSection(sectionName) {
+  if (!sectionName) return;
+  for (const item of sidebarRailItems) {
+    item.classList.toggle("active", item.dataset.section === sectionName);
+  }
+  for (const section of sidebarSections) {
+    section.classList.toggle("active", section.dataset.sectionPanel === sectionName);
+  }
+}
+
+function initializeSidebarSections() {
+  const first = sidebarRailItems[0]?.dataset.section || "system";
+  setSidebarSection(first);
+}
+
+function loadThemeMode() {
+  try {
+    const raw = localStorage.getItem(THEME_MODE_KEY);
+    if (raw === "dark" || raw === "light") return raw;
+  } catch {}
+  return "light";
+}
+
+function applyThemeMode(mode, persist = true) {
+  const nextMode = mode === "dark" ? "dark" : "light";
+  document.body.classList.toggle("dark-mode", nextMode === "dark");
+  if (topThemeToggle) {
+    topThemeToggle.classList.toggle("active", nextMode === "dark");
+    const nextLabel = nextMode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode";
+    topThemeToggle.title = nextLabel;
+    topThemeToggle.setAttribute("aria-label", nextLabel);
+  }
+  if (topThemeSunIcon) topThemeSunIcon.classList.toggle("hidden", nextMode === "dark");
+  if (topThemeMoonIcon) topThemeMoonIcon.classList.toggle("hidden", nextMode !== "dark");
+  if (persist) {
+    try {
+      localStorage.setItem(THEME_MODE_KEY, nextMode);
+    } catch {}
+  }
+}
+
+function toggleThemeMode() {
+  const isDark = document.body.classList.contains("dark-mode");
+  applyThemeMode(isDark ? "light" : "dark", true);
+}
+
+function updateTopBannerQuickToolsVisibility() {
+  const show = state.currentScreen === "register";
+  if (topBannerLiveChip) topBannerLiveChip.classList.toggle("hidden", !show);
+  if (topBannerTools) topBannerTools.classList.toggle("hidden", !show);
 }
 
 function setScreen(name) {
@@ -1104,14 +1246,114 @@ function setScreen(name) {
       if (dashboardReportsError) dashboardReportsError.textContent = error.message;
     });
   }
+  updateTopBannerQuickToolsVisibility();
   setSidebarDrawerOpen(false);
   if (name !== "register") closeCheckoutPopup();
 }
 
 function updateClock() {
   const now = new Date();
-  dashDate.textContent = now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-  dashTime.textContent = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+  if (dashboardWelcomeTitle) updateDashboardWelcome();
+  if (topBannerDate) topBannerDate.textContent = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  if (topBannerTime) topBannerTime.textContent = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.().catch(() => {});
+    return;
+  }
+  document.exitFullscreen?.().catch(() => {});
+}
+
+let calculatorExpression = "0";
+
+function renderCalculatorDisplay() {
+  if (!calculatorDisplay) return;
+  calculatorDisplay.textContent = calculatorExpression || "0";
+}
+
+function closeToolPanels() {
+  if (calculatorPanel) calculatorPanel.classList.add("hidden");
+  if (shortcutsPanel) shortcutsPanel.classList.add("hidden");
+  topToolCalculator?.classList.remove("active");
+  topToolShortcuts?.classList.remove("active");
+}
+
+function openCalculatorPanel() {
+  if (!calculatorPanel) return;
+  const willOpen = calculatorPanel.classList.contains("hidden");
+  closeToolPanels();
+  if (willOpen) {
+    calculatorPanel.classList.remove("hidden");
+    topToolCalculator?.classList.add("active");
+    renderCalculatorDisplay();
+  }
+}
+
+function openShortcutsPanel() {
+  if (!shortcutsPanel) return;
+  const willOpen = shortcutsPanel.classList.contains("hidden");
+  closeToolPanels();
+  if (willOpen) {
+    shortcutsPanel.classList.remove("hidden");
+    topToolShortcuts?.classList.add("active");
+  }
+}
+
+function applyCalculatorAction(action) {
+  const act = String(action || "").trim();
+  if (!act) return;
+  if (act === "ac") {
+    calculatorExpression = "0";
+    renderCalculatorDisplay();
+    return;
+  }
+  if (act === "back") {
+    calculatorExpression = calculatorExpression.length > 1 ? calculatorExpression.slice(0, -1) : "0";
+    renderCalculatorDisplay();
+    return;
+  }
+  if (act === "=") {
+    try {
+      const safeExpr = calculatorExpression.replace(/×/g, "*").replace(/÷/g, "/");
+      if (!/^[0-9+\-*/().%\s]+$/.test(safeExpr)) throw new Error("invalid");
+      const result = Function(`"use strict"; return (${safeExpr});`)();
+      calculatorExpression = Number.isFinite(result) ? String(result) : "0";
+    } catch {
+      calculatorExpression = "0";
+    }
+    renderCalculatorDisplay();
+    return;
+  }
+  if (act === "%") {
+    const asNum = Number(calculatorExpression);
+    calculatorExpression = Number.isFinite(asNum) ? String(asNum / 100) : "0";
+    renderCalculatorDisplay();
+    return;
+  }
+
+  const operators = new Set(["+", "-", "*", "/"]);
+  const isOp = operators.has(act);
+  if (calculatorExpression === "0" && !isOp && act !== ".") {
+    calculatorExpression = act;
+    renderCalculatorDisplay();
+    return;
+  }
+  if (isOp) {
+    if (operators.has(calculatorExpression.slice(-1))) {
+      calculatorExpression = `${calculatorExpression.slice(0, -1)}${act}`;
+    } else {
+      calculatorExpression += act;
+    }
+    renderCalculatorDisplay();
+    return;
+  }
+  if (act === "." && /\.\d*$/.test(calculatorExpression.split(/[+\-*/]/).pop() || "")) {
+    return;
+  }
+  calculatorExpression += act;
+  renderCalculatorDisplay();
 }
 
 async function refreshSummary() {
@@ -4536,8 +4778,8 @@ loginForm.addEventListener("submit", async (e) => {
       })
     });
     state.currentStaff = payload.staff;
-    activeStaffName.textContent = payload.staff.name;
-    activeStaffRole.textContent = payload.staff.role;
+    if (activeStaffName) activeStaffName.textContent = payload.staff.name;
+    if (activeStaffRole) activeStaffRole.textContent = payload.staff.role;
     updateDashboardWelcome();
     staffPin.value = "";
     setScreen("dashboard");
@@ -4570,6 +4812,26 @@ if (dashboardRangeFilter) {
 
 async function handleSidebarRoute(route) {
   if (!route) return;
+  const requestedRoute = route;
+  const routeAliases = {
+    products: "inventory",
+    categories: "inventory",
+    "stock-adjustments": "settlement",
+    barcodes: "terminal",
+    "shipping-methods": "terminal",
+    coupons: "manual",
+    "tax-management": "services",
+    "member-directory": "transactions",
+    "access-roles": "settings",
+    "my-profile": "settings",
+    "business-rebranding": "settings",
+    "legal-center": "help",
+    "pos-settings": "settings",
+    "activity-log": "transactions",
+    customers: "transactions",
+    support: "help"
+  };
+  route = routeAliases[route] || route;
   if (route === "dashboard") {
     setScreen("dashboard");
     updateClock();
@@ -4583,6 +4845,13 @@ async function handleSidebarRoute(route) {
   if (route === "inventory") {
     await refreshServices();
     await openInventoryScreen();
+    if (requestedRoute === "categories") {
+      setInventoryView("category");
+      setActiveNavRoute("categories");
+    } else if (requestedRoute === "products") {
+      setInventoryView("list");
+      setActiveNavRoute("products");
+    }
     return;
   }
   if (route === "services") {
@@ -4594,21 +4863,25 @@ async function handleSidebarRoute(route) {
     return;
   }
   if (route === "reports") {
+    setActiveNavRoute(requestedRoute);
+    updateAppHeader();
     await openReportsDialog();
     return;
   }
   if (route === "transactions") {
+    setActiveNavRoute(requestedRoute);
+    updateAppHeader();
     await openTransactionsDialog();
     return;
   }
   if (route === "terminal" || route === "settlement" || route === "manual" || route === "invoicing" || route === "orders" || route === "help") {
-    setActiveNavRoute(route);
+    setActiveNavRoute(requestedRoute);
     updateAppHeader();
     window.alert("Module draft will be built next.");
     return;
   }
   if (route === "settings") {
-    setActiveNavRoute(route);
+    setActiveNavRoute(requestedRoute);
     updateAppHeader();
     window.alert("Settings module placeholder.");
     return;
@@ -4620,7 +4893,22 @@ async function handleSidebarRoute(route) {
 
 if (appSidebar) {
   appSidebar.addEventListener("click", async (e) => {
-    const routeBtn = e.target.closest(".sidebar-nav-item[data-route]");
+    const railItem = e.target.closest(".sidebar-rail-item[data-section]");
+    if (railItem) {
+      setSidebarSection(String(railItem.dataset.section || "system"));
+      return;
+    }
+    const subtoggle = e.target.closest(".sidebar-subtoggle[data-subtoggle-target]");
+    if (subtoggle) {
+      const targetId = String(subtoggle.dataset.subtoggleTarget || "");
+      const menu = targetId ? document.getElementById(targetId) : null;
+      if (!menu) return;
+      const nextHidden = !menu.classList.contains("hidden");
+      menu.classList.toggle("hidden", nextHidden);
+      subtoggle.setAttribute("aria-expanded", nextHidden ? "false" : "true");
+      return;
+    }
+    const routeBtn = e.target.closest("[data-route]");
     if (!routeBtn) return;
     await handleSidebarRoute(String(routeBtn.dataset.route || ""));
   });
@@ -4653,6 +4941,47 @@ if (sidebarCollapseToggle) {
 if (appBackdrop) {
   appBackdrop.addEventListener("click", () => setSidebarDrawerOpen(false));
 }
+
+if (topToolCalculator) {
+  topToolCalculator.addEventListener("click", openCalculatorPanel);
+}
+
+if (topToolShortcuts) {
+  topToolShortcuts.addEventListener("click", openShortcutsPanel);
+}
+
+if (topToolFullscreen) {
+  topToolFullscreen.addEventListener("click", toggleFullscreen);
+}
+if (topThemeToggle) {
+  topThemeToggle.addEventListener("click", toggleThemeMode);
+}
+
+if (calculatorClose) {
+  calculatorClose.addEventListener("click", closeToolPanels);
+}
+
+if (shortcutsClose) {
+  shortcutsClose.addEventListener("click", closeToolPanels);
+}
+
+if (calculatorPanel) {
+  calculatorPanel.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-calc]");
+    if (!btn) return;
+    applyCalculatorAction(btn.dataset.calc || "");
+  });
+}
+
+document.addEventListener("click", (e) => {
+  const insideCalc = calculatorPanel?.contains(e.target);
+  const insideShortcuts = shortcutsPanel?.contains(e.target);
+  const isToolBtn = e.target.closest("#top-tool-calculator, #top-tool-shortcuts");
+  if (insideCalc || insideShortcuts || isToolBtn) return;
+  if (!calculatorPanel?.classList.contains("hidden") || !shortcutsPanel?.classList.contains("hidden")) {
+    closeToolPanels();
+  }
+});
 
 window.addEventListener("resize", () => {
   if (!isMobileSidebarViewport()) {
@@ -4771,6 +5100,10 @@ if (inventoryGroupProduct) {
 for (const item of inventorySubmenuItems) {
   item.addEventListener("click", async () => {
     const view = String(item.dataset.inventoryView || "list");
+    if (state.currentScreen !== "inventory") {
+      state.inventory.view = view;
+      await openInventoryScreen();
+    }
     setInventoryView(view);
     if (view === "add") {
       openInventoryAddDialog();
@@ -6362,6 +6695,22 @@ attachDragReorder(servicesAdminList, ".service-list-item.draggable-item", async 
 document.addEventListener("keydown", (e) => {
   const key = String(e.key || "").toLowerCase();
 
+  if (e.altKey && key === "f") {
+    e.preventDefault();
+    toggleFullscreen();
+    return;
+  }
+  if (e.altKey && key === "d") {
+    e.preventDefault();
+    openCalculatorPanel();
+    return;
+  }
+  if (e.altKey && key === "k") {
+    e.preventDefault();
+    openShortcutsPanel();
+    return;
+  }
+
   if ((e.ctrlKey || e.metaKey) && key === "f") {
     if (transactionsDialog?.open && transactionsReferenceSearch) {
       e.preventDefault();
@@ -6377,6 +6726,11 @@ document.addEventListener("keydown", (e) => {
   }
 
   if (key !== "escape") return;
+  if (!calculatorPanel?.classList.contains("hidden") || !shortcutsPanel?.classList.contains("hidden")) {
+    e.preventDefault();
+    closeToolPanels();
+    return;
+  }
   if (inventoryAddDialog?.open) {
     e.preventDefault();
     inventoryAddDialog.close();
@@ -6424,6 +6778,8 @@ async function init() {
   state.subcategoryStatus = loadSubcategoryStatus();
   state.subsubcategoryOverrides = loadSubsubcategoryOverrides();
   state.deletedServiceIds = loadDeletedServiceIds();
+  applySidebarRouteIcons();
+  applyThemeMode(loadThemeMode(), false);
   initializeSidebarState();
   setPayment("cash");
   updateDashboardWelcome();
