@@ -13,6 +13,7 @@ const DELETED_SERVICE_IDS_KEY = "pos_deleted_service_ids_v1";
 const SIDEBAR_COLLAPSED_KEY = "pos_sidebar_collapsed";
 const THEME_MODE_KEY = "pos_theme_mode";
 const MOBILE_SIDEBAR_BREAKPOINT = 1100;
+const PHONE_SIDEBAR_BREAKPOINT = 860;
 
 const state = {
   staff: [],
@@ -31,7 +32,7 @@ const state = {
   reports: null,
   transactionsView: [],
   dashboardReports: {
-    range: "all"
+    range: "today"
   },
   currentScreen: "login",
   activeNavRoute: "dashboard",
@@ -52,6 +53,7 @@ const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP"
 const appShell = document.querySelector(".app-shell");
 const appLayout = document.getElementById("app-layout");
 const appSidebar = document.getElementById("app-sidebar");
+const appMain = document.querySelector(".app-main");
 const appBackdrop = document.getElementById("app-backdrop");
 const sidebarToggle = document.getElementById("sidebar-toggle");
 const sidebarCollapseToggle = document.getElementById("sidebar-collapse-toggle");
@@ -102,6 +104,20 @@ const dashboardReportsServiceBody = document.getElementById("dashboard-reports-s
 const dashboardReportsTopBody = document.getElementById("dashboard-reports-top-body");
 const dashboardReportsPaymentBody = document.getElementById("dashboard-reports-payment-body");
 const dashboardReportsCashBody = document.getElementById("dashboard-reports-cash-body");
+const dashboardLastSynced = document.getElementById("dashboard-last-synced");
+const dashboardTrendSales = document.getElementById("dashboard-trend-sales");
+const dashboardTrendTransactions = document.getElementById("dashboard-trend-transactions");
+const dashboardTrendCashIn = document.getElementById("dashboard-trend-cash-in");
+const dashboardTrendCashOut = document.getElementById("dashboard-trend-cash-out");
+const dashboardTrendNet = document.getElementById("dashboard-trend-net");
+const dashboardActionService = document.getElementById("dashboard-action-service");
+const dashboardActionTop = document.getElementById("dashboard-action-top");
+const dashboardActionPayment = document.getElementById("dashboard-action-payment");
+const dashboardActionCash = document.getElementById("dashboard-action-cash");
+const dashboardOpenServices = document.getElementById("dashboard-open-services");
+const dashboardOpenReportsTop = document.getElementById("dashboard-open-reports-top");
+const dashboardOpenRegister = document.getElementById("dashboard-open-register");
+const dashboardOpenCash = document.getElementById("dashboard-open-cash");
 const dashboardTiles = document.getElementById("dashboard-tiles");
 const goDashboard = document.getElementById("go-dashboard");
 const logoutBtn = document.getElementById("logout-btn");
@@ -708,9 +724,9 @@ async function commitPendingServiceDelete(batch) {
   if (failedIds.length > 0) {
     for (const id of failedIds) delete state.deletedServiceIds[id];
     saveDeletedServiceIds();
-    showToast(`Failed to delete ${failedIds.length} service(s).`);
+    showToast(`Failed to delete ${failedIds.length} product(s).`);
   } else {
-    showToast(`Deleted ${batch.ids.length} service(s).`);
+    showToast(`Deleted ${batch.ids.length} product(s).`);
   }
   await refreshServices();
   renderServiceAdmin();
@@ -753,7 +769,7 @@ async function queueServiceDeleteWithUndo(ids) {
     commitPendingServiceDelete(batch);
   }, 5000);
   pendingServiceDeleteBatch = batch;
-  showToast(`${clean.length} service(s) marked for delete.`, {
+  showToast(`${clean.length} product(s) marked for delete.`, {
     duration: 5000,
     actionText: "Undo",
     onAction: () => undoPendingDelete(batch)
@@ -845,7 +861,7 @@ function renderTaxonomyManagers() {
   if (!parentCategory || !parentSubcategory) {
     subsubcategoryList.innerHTML = `<p class="admin-empty">Choose a subcategory to view child subcategories.</p>`;
   } else {
-    const continueToServices = `<div class="list-item add-item"><button type="button" class="list-chip add-new-chip" data-open-services="true">Continue to Services</button></div>`;
+    const continueToServices = `<div class="list-item add-item"><button type="button" class="list-chip add-new-chip" data-open-services="true">Continue to Products</button></div>`;
     const subSubItems = subSubList.map((s) => (
       `<div class="list-item draggable-item ${s === selectedManageSubsubcategory ? "active" : ""}" data-subsub="${escapeAttr(s)}" draggable="true">
         <button type="button" class="list-chip" data-subsub="${escapeAttr(s)}">${escapeHtml(s)}</button>
@@ -1030,6 +1046,10 @@ function isMobileSidebarViewport() {
   return window.innerWidth <= MOBILE_SIDEBAR_BREAKPOINT;
 }
 
+function isTabletSidebarViewport() {
+  return window.innerWidth > PHONE_SIDEBAR_BREAKPOINT && window.innerWidth <= MOBILE_SIDEBAR_BREAKPOINT;
+}
+
 function setSidebarDrawerOpen(open) {
   appShell?.classList.toggle("sidebar-drawer-open", Boolean(open));
   if (appBackdrop) appBackdrop.classList.toggle("hidden", !open);
@@ -1065,7 +1085,7 @@ function getRouteTitle(route) {
     dashboard: "Dashboard",
     register: "POS Terminal",
     inventory: "Inventory",
-    services: "Services",
+    services: "Products",
     reports: "Reports",
     transactions: "Transactions",
     terminal: "Terminal",
@@ -1224,9 +1244,10 @@ function toggleThemeMode() {
 }
 
 function updateTopBannerQuickToolsVisibility() {
-  const show = state.currentScreen === "register";
-  if (topBannerLiveChip) topBannerLiveChip.classList.toggle("hidden", !show);
-  if (topBannerTools) topBannerTools.classList.toggle("hidden", !show);
+  const isAppScreen = state.currentScreen !== "login";
+  const showLive = state.currentScreen === "register";
+  if (topBannerLiveChip) topBannerLiveChip.classList.toggle("hidden", !showLive);
+  if (topBannerTools) topBannerTools.classList.toggle("hidden", !isAppScreen);
 }
 
 function setScreen(name) {
@@ -1249,13 +1270,22 @@ function setScreen(name) {
   updateTopBannerQuickToolsVisibility();
   setSidebarDrawerOpen(false);
   if (name !== "register") closeCheckoutPopup();
+  updateTopBannerScrollState();
 }
 
 function updateClock() {
   const now = new Date();
   if (dashboardWelcomeTitle) updateDashboardWelcome();
+  if (topBannerTime) {
+    topBannerTime.textContent = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+  }
   if (topBannerDate) topBannerDate.textContent = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
-  if (topBannerTime) topBannerTime.textContent = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+}
+
+function updateTopBannerScrollState() {
+  const hasScroll = (appMain?.scrollTop || 0) > 2;
+  const banner = document.querySelector(".top-banner");
+  if (banner) banner.classList.toggle("scrolled", hasScroll);
 }
 
 function toggleFullscreen() {
@@ -1392,7 +1422,7 @@ function updateInventorySelectedCount() {
 }
 
 function inventoryServiceOptionsHtml(selectedId = "") {
-  const options = [`<option value="">(No linked service)</option>`];
+  const options = [`<option value="">(No linked product)</option>`];
   for (const service of state.services) {
     options.push(
       `<option value="${escapeAttr(service.id)}" ${String(selectedId || "") === String(service.id) ? "selected" : ""}>${escapeHtml(service.name)}</option>`
@@ -2246,18 +2276,102 @@ function dashboardDateRangeFromPreset(preset) {
   return { startDate: today, endDate: today };
 }
 
-function renderDashboardReports(payload) {
+function dateKeyToDate(dateKey) {
+  const [year, month, day] = String(dateKey || "").split("-").map(Number);
+  return new Date(year || 1970, (month || 1) - 1, day || 1);
+}
+
+function dateToKey(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObj.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function previousDashboardRange(range) {
+  if (!range?.startDate || !range?.endDate) return null;
+  const start = dateKeyToDate(range.startDate);
+  const end = dateKeyToDate(range.endDate);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const span = Math.max(1, Math.round((end.getTime() - start.getTime()) / dayMs) + 1);
+  const prevEnd = new Date(start);
+  prevEnd.setDate(prevEnd.getDate() - 1);
+  const prevStart = new Date(prevEnd);
+  prevStart.setDate(prevStart.getDate() - (span - 1));
+  return { startDate: dateToKey(prevStart), endDate: dateToKey(prevEnd) };
+}
+
+function renderDashboardTrend(el, currentValue, previousValue) {
+  if (!el) return;
+  const current = Number(currentValue || 0);
+  const previous = Number(previousValue || 0);
+  el.classList.remove("up", "down", "flat");
+
+  if (!Number.isFinite(current) || !Number.isFinite(previous)) {
+    el.textContent = "No trend data";
+    el.title = "Compared with the previous equivalent date range.";
+    el.classList.add("flat");
+    return;
+  }
+
+  if (current === 0 && previous === 0) {
+    el.textContent = "No change vs previous";
+    el.title = "Compared with the previous equivalent date range.";
+    el.classList.add("flat");
+    return;
+  }
+
+  if (previous === 0) {
+    el.textContent = "+100.0% vs previous";
+    el.title = "Compared with the previous equivalent date range.";
+    el.classList.add("up");
+    return;
+  }
+
+  const change = ((current - previous) / Math.abs(previous)) * 100;
+  const sign = change > 0 ? "+" : "";
+  el.textContent = `${sign}${change.toFixed(1)}% vs previous`;
+  el.title = "Compared with the previous equivalent date range.";
+  if (Math.abs(change) < 0.1) {
+    el.classList.add("flat");
+  } else {
+    el.classList.add(change > 0 ? "up" : "down");
+  }
+}
+
+function setDashboardSyncMeta() {
+  if (!dashboardLastSynced) return;
+  dashboardLastSynced.textContent = `Last synced: ${new Date().toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit"
+  })}`;
+}
+
+function renderDashboardReports(payload, previousPayload = null) {
   if (!payload) return;
   const totals = payload.totals || {};
   const cashMovements = payload.cashMovements || {};
   const cashIn = cashMovements.cashIn || {};
   const cashOut = cashMovements.cashOut || {};
+  const prevTotals = previousPayload?.totals || {};
+  const prevCashMovements = previousPayload?.cashMovements || {};
+  const prevCashIn = prevCashMovements.cashIn || {};
+  const prevCashOut = prevCashMovements.cashOut || {};
 
   if (dashboardTotalSales) dashboardTotalSales.textContent = peso.format(Number(totals.totalSales || 0));
   if (dashboardTransactionCount) dashboardTransactionCount.textContent = `${Number(totals.transactionCount || 0)} transaction(s)`;
   if (dashboardCashInTotal) dashboardCashInTotal.textContent = peso.format(Number(cashIn.total || 0));
   if (dashboardCashOutTotal) dashboardCashOutTotal.textContent = peso.format(Number(cashOut.total || 0));
   if (dashboardNetCash) dashboardNetCash.textContent = peso.format(Number(cashMovements.net || 0));
+  renderDashboardTrend(dashboardTrendSales, totals.totalSales || 0, prevTotals.totalSales || 0);
+  renderDashboardTrend(dashboardTrendTransactions, totals.transactionCount || 0, prevTotals.transactionCount || 0);
+  renderDashboardTrend(dashboardTrendCashIn, cashIn.total || 0, prevCashIn.total || 0);
+  renderDashboardTrend(dashboardTrendCashOut, cashOut.total || 0, prevCashOut.total || 0);
+  renderDashboardTrend(dashboardTrendNet, cashMovements.net || 0, prevCashMovements.net || 0);
 
   if (dashboardReportsServiceBody) {
     dashboardReportsServiceBody.innerHTML = rowOrEmpty(
@@ -2269,7 +2383,7 @@ function renderDashboardReports(payload) {
         </tr>
       `).join(""),
       3,
-      "No service sales in this date range."
+      "No product sales in this date range."
     );
   }
 
@@ -2283,7 +2397,7 @@ function renderDashboardReports(payload) {
         </tr>
       `).join(""),
       3,
-      "No top services yet."
+      "No top products yet."
     );
   }
 
@@ -2315,6 +2429,12 @@ function renderDashboardReports(payload) {
       "No cash movement entries in this date range."
     );
   }
+
+  if (dashboardActionService) dashboardActionService.classList.toggle("hidden", (payload.salesByService || []).length > 0);
+  if (dashboardActionTop) dashboardActionTop.classList.toggle("hidden", (payload.topServices || []).length > 0);
+  if (dashboardActionPayment) dashboardActionPayment.classList.toggle("hidden", (payload.paymentBreakdown || []).length > 0);
+  if (dashboardActionCash) dashboardActionCash.classList.toggle("hidden", (payload.cashMovementEntries || []).length > 0);
+  setDashboardSyncMeta();
 }
 
 async function refreshDashboardReports() {
@@ -2323,7 +2443,16 @@ async function refreshDashboardReports() {
   const preset = String(dashboardRangeFilter.value || "all").trim().toLowerCase();
   const range = dashboardDateRangeFromPreset(preset);
   const payload = await api(`/api/reports?startDate=${encodeURIComponent(range.startDate)}&endDate=${encodeURIComponent(range.endDate)}`);
-  renderDashboardReports(payload);
+  let previousPayload = null;
+  const previousRange = preset === "all" ? null : previousDashboardRange(range);
+  if (previousRange) {
+    try {
+      previousPayload = await api(`/api/reports?startDate=${encodeURIComponent(previousRange.startDate)}&endDate=${encodeURIComponent(previousRange.endDate)}`);
+    } catch {
+      previousPayload = null;
+    }
+  }
+  renderDashboardReports(payload, previousPayload);
 }
 
 function exportReportsCsv() {
@@ -2342,8 +2471,8 @@ function exportReportsCsv() {
   rows.push(["Cash Out", Number(report.cashMovements?.cashOut?.total || 0)]);
   rows.push(["Net Cash Movement", Number(report.cashMovements?.net || 0)]);
   rows.push([]);
-  rows.push(["Sales By Service"]);
-  rows.push(["Service", "Qty", "Sales"]);
+  rows.push(["Sales By Product"]);
+  rows.push(["Product", "Qty", "Sales"]);
   for (const row of report.salesByService || []) {
     rows.push([row.serviceName || "", Number(row.qty || 0), Number(row.sales || 0)]);
   }
@@ -2386,8 +2515,8 @@ function exportReportsPdf() {
     `Cash Out: ${peso.format(Number(report.cashMovements?.cashOut?.total || 0))}`,
     `Net Cash: ${peso.format(Number(report.cashMovements?.net || 0))}`,
     "",
-    "Sales By Service",
-    line([pad("Service", 26), pad("Qty", 5), pad("Sales", 12)]),
+    "Sales By Product",
+    line([pad("Product", 26), pad("Qty", 5), pad("Sales", 12)]),
     "-".repeat(52),
     ...((report.salesByService || []).length
       ? (report.salesByService || []).map((row) => line([
@@ -2395,10 +2524,10 @@ function exportReportsPdf() {
         pad(Number(row.qty || 0), 5),
         pad(peso.format(Number(row.sales || 0)), 12)
       ]))
-      : ["No service sales"]),
+      : ["No product sales"]),
     "",
-    "Top Services",
-    line([pad("#", 3), pad("Service", 26), pad("Sales", 12)]),
+    "Top Products",
+    line([pad("#", 3), pad("Product", 26), pad("Sales", 12)]),
     "-".repeat(47),
     ...((report.topServices || []).length
       ? (report.topServices || []).map((row, idx) => line([
@@ -2406,7 +2535,7 @@ function exportReportsPdf() {
         pad(row.serviceName || "", 26),
         pad(peso.format(Number(row.sales || 0)), 12)
       ]))
-      : ["No top services"]),
+      : ["No top products"]),
     "",
     "Payment Breakdown",
     line([pad("Payment", 18), pad("Tx Count", 9), pad("Sales", 12)]),
@@ -2503,8 +2632,8 @@ function printReportsSummary() {
       <tr><th>Net Cash</th><td>${peso.format(Number(report.cashMovements?.net || 0))}</td></tr>
     </tbody></table>
   </div>
-  <h2>Top Services</h2>
-  <table><thead><tr><th>#</th><th>Service</th><th>Sales</th></tr></thead><tbody>
+  <h2>Top Products</h2>
+  <table><thead><tr><th>#</th><th>Product</th><th>Sales</th></tr></thead><tbody>
   ${(report.topServices || []).map((row, idx) => `<tr><td>${idx + 1}</td><td>${escapeHtml(row.serviceName || "")}</td><td>${peso.format(Number(row.sales || 0))}</td></tr>`).join("") || `<tr><td colspan="3">No records</td></tr>`}
   </tbody></table>
   <h2>Payment Breakdown</h2>
@@ -2570,7 +2699,7 @@ function renderReports(payload) {
         </tr>
       `).join(""),
       3,
-      "No service sales in this date range."
+      "No product sales in this date range."
     );
   }
 
@@ -2584,7 +2713,7 @@ function renderReports(payload) {
         </tr>
       `).join(""),
       3,
-      "No top services yet."
+      "No top products yet."
     );
   }
 
@@ -3206,7 +3335,7 @@ function openTransactionItems(txId) {
   const totalText = peso.format(Number(tx.total || 0));
   const referenceText = String(tx.referenceNumber || "").trim() || "-";
   if (transactionItemsTitle) {
-    transactionItemsTitle.textContent = "Purchased Services";
+    transactionItemsTitle.textContent = "Purchased Products";
   }
   if (txDetailDate) txDetailDate.textContent = tx.date || "-";
   if (txDetailTime) txDetailTime.textContent = timeAmPm || "-";
@@ -3725,7 +3854,7 @@ function resolveCashMovementChoice(value) {
   if (cashMovementDialog?.open) cashMovementDialog.close();
 }
 
-function askServiceEdit(name, price, title = "Edit Service", priceMode = "fixed") {
+function askServiceEdit(name, price, title = "Edit Product", priceMode = "fixed") {
   return new Promise((resolve) => {
     serviceEditResolver = resolve;
     if (serviceEditTitle) serviceEditTitle.textContent = title;
@@ -3755,7 +3884,7 @@ function syncServiceEditPriceVisibility() {
 function askServiceAmount(name, defaultPrice) {
   return new Promise((resolve) => {
     serviceAmountResolver = resolve;
-    if (serviceAmountName) serviceAmountName.textContent = name || "Service";
+    if (serviceAmountName) serviceAmountName.textContent = name || "Product";
     if (serviceAmountInput) {
       serviceAmountInput.value = Number.isFinite(Number(defaultPrice)) ? String(defaultPrice) : "";
     }
@@ -3902,19 +4031,19 @@ async function ensurePrintCatalogFromClient() {
     ["Laminate", "General", "4r", 35, "fixed"],
     ["Laminate", "General", "5r", 40, "fixed"],
     ["Laminate", "General", "A4", 50, "fixed"],
-    ["Other Services", "Customized Items", "Tracing Pads", 10, "ask"],
-    ["Other Services", "Customized Items", "Cursive Pad", 10, "ask"],
-    ["Other Services", "Customized Items", "Notepads", 10, "ask"],
-    ["Other Services", "Invitations", "Wedding Invitation", 10, "ask"],
-    ["Other Services", "Invitations", "Baptismal Invitation", 10, "ask"],
-    ["Other Services", "Invitations", "Birthday Invitation", 10, "ask"],
-    ["Other Services", "General", "Calling Card", 10, "ask"],
-    ["Other Services", "General", "Sticker (Custom)", 10, "ask"],
-    ["Other Services", "General", "Mini Calendar / Desk Calendar", 10, "ask"],
-    ["Other Services", "General", "Resume", 10, "ask"],
-    ["Other Services", "General", "Typing Jobs", 10, "ask"],
-    ["Other Services", "General", "Tarpaulin & Flyers Layout", 10, "ask"],
-    ["Other Services", "General", "Research / Editing", 10, "ask"]
+    ["Other Products", "Customized Items", "Tracing Pads", 10, "ask"],
+    ["Other Products", "Customized Items", "Cursive Pad", 10, "ask"],
+    ["Other Products", "Customized Items", "Notepads", 10, "ask"],
+    ["Other Products", "Invitations", "Wedding Invitation", 10, "ask"],
+    ["Other Products", "Invitations", "Baptismal Invitation", 10, "ask"],
+    ["Other Products", "Invitations", "Birthday Invitation", 10, "ask"],
+    ["Other Products", "General", "Calling Card", 10, "ask"],
+    ["Other Products", "General", "Sticker (Custom)", 10, "ask"],
+    ["Other Products", "General", "Mini Calendar / Desk Calendar", 10, "ask"],
+    ["Other Products", "General", "Resume", 10, "ask"],
+    ["Other Products", "General", "Typing Jobs", 10, "ask"],
+    ["Other Products", "General", "Tarpaulin & Flyers Layout", 10, "ask"],
+    ["Other Products", "General", "Research / Editing", 10, "ask"]
   ];
 
   const keyOf = (name, sub, subsub) => `${String(name || "").trim().toLowerCase()}|${String(sub || "").trim().toLowerCase()}|${String(subsub || "").trim().toLowerCase()}`;
@@ -4045,7 +4174,7 @@ function renderServiceAdmin() {
 
   if (!subcategory) {
     setBulkState(true, "Enable All");
-    servicesAdminList.innerHTML = `<p class="admin-empty">Select a subcategory to load services.</p>`;
+    servicesAdminList.innerHTML = `<p class="admin-empty">Select a subcategory to load products.</p>`;
     updateSelectedCount();
     return;
   }
@@ -4054,7 +4183,7 @@ function renderServiceAdmin() {
   const availableSubSub = state.taxonomy.subSubcategories?.[subSubKey] || [];
   if (availableSubSub.length > 0 && !subsubcategory) {
     setBulkState(true, "Enable All");
-    servicesAdminList.innerHTML = `<p class="admin-empty">Select a child subcategory to load services.</p>`;
+    servicesAdminList.innerHTML = `<p class="admin-empty">Select a child subcategory to load products.</p>`;
     updateSelectedCount();
     return;
   }
@@ -4072,7 +4201,7 @@ function renderServiceAdmin() {
   if (filtered.length === 0) {
     setBulkState(true, "Enable All");
     selectedManageServiceIds = {};
-    servicesAdminList.innerHTML = `<p class="admin-empty">No services found for this selection.</p>`;
+    servicesAdminList.innerHTML = `<p class="admin-empty">No products found for this selection.</p>`;
     updateSelectedCount();
     return;
   }
@@ -4122,7 +4251,7 @@ async function setAllServicesActive(nextActive) {
   const scopedServices = getCurrentManagedServices();
   const ids = scopedServices.map((s) => String(s.id || "")).filter(Boolean);
   if (ids.length === 0) {
-    servicesAdminError.textContent = "No services found for this selection.";
+    servicesAdminError.textContent = "No products found for this selection.";
     return;
   }
   try {
@@ -4188,7 +4317,7 @@ async function editServiceFromBox(row) {
   const currentPriceMode = String(row.dataset.priceMode || "fixed").trim();
   if (!id || !category) return;
 
-  const edited = await askServiceEdit(currentName, currentPrice, "Edit Service", currentPriceMode);
+  const edited = await askServiceEdit(currentName, currentPrice, "Edit Product", currentPriceMode);
   if (!edited) return;
   const nextName = String(edited.name || "").trim();
   const nextPriceMode = String(edited.priceMode || "fixed").trim() === "ask" ? "ask" : "fixed";
@@ -4229,14 +4358,14 @@ async function addServiceFromBox() {
     return;
   }
 
-  const created = await askServiceEdit("", "", "Add Service", "fixed");
+  const created = await askServiceEdit("", "", "Add Product", "fixed");
   if (!created) return;
   const name = String(created.name || "").trim();
   const priceMode = String(created.priceMode || "fixed").trim() === "ask" ? "ask" : "fixed";
   const rawPrice = Number(created.price);
   const price = (priceMode === "ask" && (!Number.isFinite(rawPrice) || rawPrice <= 0)) ? 1 : rawPrice;
   if (!name) {
-    servicesAdminError.textContent = "Service name is required.";
+    servicesAdminError.textContent = "Product name is required.";
     return;
   }
   if (!Number.isFinite(price) || price <= 0) {
@@ -4558,7 +4687,7 @@ async function addService() {
   const subcategory = newServiceSubcategory.value.trim();
   const price = Number(newServicePrice.value);
   if (!name || !category || !Number.isFinite(price) || price <= 0) {
-    servicesAdminError.textContent = "Please enter valid service details.";
+    servicesAdminError.textContent = "Please enter valid product details.";
     return;
   }
 
@@ -4799,9 +4928,9 @@ if (dashboardTiles) {
 }
 
 if (dashboardRangeFilter) {
-  dashboardRangeFilter.value = state.dashboardReports.range || "all";
+  dashboardRangeFilter.value = state.dashboardReports.range || "today";
   dashboardRangeFilter.addEventListener("change", async () => {
-    state.dashboardReports.range = String(dashboardRangeFilter.value || "all");
+    state.dashboardReports.range = String(dashboardRangeFilter.value || "today");
     try {
       await refreshDashboardReports();
     } catch (error) {
@@ -4896,6 +5025,9 @@ if (appSidebar) {
     const railItem = e.target.closest(".sidebar-rail-item[data-section]");
     if (railItem) {
       setSidebarSection(String(railItem.dataset.section || "system"));
+      if (isTabletSidebarViewport()) {
+        setSidebarDrawerOpen(true);
+      }
       return;
     }
     const subtoggle = e.target.closest(".sidebar-subtoggle[data-subtoggle-target]");
@@ -4983,11 +5115,38 @@ document.addEventListener("click", (e) => {
   }
 });
 
+if (dashboardOpenServices) {
+  dashboardOpenServices.addEventListener("click", async () => {
+    await openServicesManagerFromNav("services");
+  });
+}
+if (dashboardOpenReportsTop) {
+  dashboardOpenReportsTop.addEventListener("click", async () => {
+    await openReportsDialog();
+  });
+}
+if (dashboardOpenRegister) {
+  dashboardOpenRegister.addEventListener("click", async () => {
+    await openRegisterScreen();
+  });
+}
+if (dashboardOpenCash) {
+  dashboardOpenCash.addEventListener("click", async () => {
+    const type = await askCashMovementChoice();
+    if (type) await logCashMovement(type);
+  });
+}
+
 window.addEventListener("resize", () => {
   if (!isMobileSidebarViewport()) {
     setSidebarDrawerOpen(false);
   }
+  updateTopBannerScrollState();
 });
+
+if (appMain) {
+  appMain.addEventListener("scroll", updateTopBannerScrollState, { passive: true });
+}
 
 if (goDashboard) {
   goDashboard.addEventListener("click", () => {
@@ -5123,7 +5282,7 @@ if (inventoryImportPlaceholder) {
 if (inventoryExportCsv) {
   inventoryExportCsv.addEventListener("click", () => {
     const rows = [
-      ["Product", "SKU", "Category", "Unit", "On Hand", "Reorder", "Actual Cost", "Selling Price", "Supplier", "Linked Service", "Active"]
+      ["Product", "SKU", "Category", "Unit", "On Hand", "Reorder", "Actual Cost", "Selling Price", "Supplier", "Linked Product", "Active"]
     ];
     for (const item of state.inventory.items || []) {
       rows.push([
@@ -5608,7 +5767,7 @@ categoryList.addEventListener("click", async (e) => {
       return;
     }
     if (act === "delete") {
-      const ok = await askActionConfirm("Delete Category", `Delete "${category}"? Services will move to Uncategorized.`);
+      const ok = await askActionConfirm("Delete Category", `Delete "${category}"? Products will move to Uncategorized.`);
       if (!ok) return;
       await deleteCategory(category);
       return;
@@ -5677,7 +5836,7 @@ subcategoryList.addEventListener("click", async (e) => {
       return;
     }
     if (act === "delete") {
-      const ok = await askActionConfirm("Delete Subcategory", `Delete "${sub}"? Existing services will be moved to General.`);
+      const ok = await askActionConfirm("Delete Subcategory", `Delete "${sub}"? Existing products will be moved to General.`);
       if (!ok) return;
       await deleteSubcategory(selectedManageCategory, sub);
       return;
@@ -5735,7 +5894,7 @@ subsubcategoryList.addEventListener("click", async (e) => {
       return;
     }
     if (act === "delete") {
-      const ok = await askActionConfirm("Delete Child Subcategory", `Delete "${subsub}"? Existing services will be moved to unassigned child subcategory.`);
+      const ok = await askActionConfirm("Delete Child Subcategory", `Delete "${subsub}"? Existing products will be moved to unassigned child subcategory.`);
       if (!ok) return;
       await deleteSubsubcategory(selectedManageCategory, selectedManageSubcategory, subsub);
       return;
@@ -6380,19 +6539,19 @@ if (servicesAdminActionDeleteBtn) {
   servicesAdminActionDeleteBtn.addEventListener("click", async () => {
     try {
       if (adminStep === 1 && selectedManageCategory) {
-        const ok = await askActionConfirm("Delete Category", `Delete "${selectedManageCategory}"? Services will move to Uncategorized.`);
+        const ok = await askActionConfirm("Delete Category", `Delete "${selectedManageCategory}"? Products will move to Uncategorized.`);
         if (!ok) return;
         await deleteCategory(selectedManageCategory);
         return;
       }
       if (adminStep === 2 && selectedManageSubcategory) {
-        const ok = await askActionConfirm("Delete Subcategory", `Delete "${selectedManageSubcategory}"? Existing services will be moved to General.`);
+        const ok = await askActionConfirm("Delete Subcategory", `Delete "${selectedManageSubcategory}"? Existing products will be moved to General.`);
         if (!ok) return;
         await deleteSubcategory(selectedManageCategory, selectedManageSubcategory);
         return;
       }
       if (adminStep === 3 && selectedManageSubsubcategory) {
-        const ok = await askActionConfirm("Delete Child Subcategory", `Delete "${selectedManageSubsubcategory}"? Existing services will be moved to unassigned child subcategory.`);
+        const ok = await askActionConfirm("Delete Child Subcategory", `Delete "${selectedManageSubsubcategory}"? Existing products will be moved to unassigned child subcategory.`);
         if (!ok) return;
         await deleteSubsubcategory(selectedManageCategory, selectedManageSubcategory, selectedManageSubsubcategory);
         return;
@@ -6407,10 +6566,10 @@ if (servicesAdminActionDeleteBtn) {
           ? servicesAdminList.querySelector(`.service-list-item[data-id="${CSS.escape(String(ids[0]))}"]`)
           : null;
         const ok = await askActionConfirm(
-          "Delete Service",
+          "Delete Product",
           ids.length > 1
-            ? `Delete ${ids.length} selected services?`
-            : `Delete "${firstRow?.dataset.name || "this service"}"?`
+            ? `Delete ${ids.length} selected products?`
+            : `Delete "${firstRow?.dataset.name || "this product"}"?`
         );
         if (!ok) return;
         await queueServiceDeleteWithUndo(ids);
@@ -6444,7 +6603,7 @@ if (servicesAdminActionTransferBtn) {
         const currentCategory = String(first.dataset.category || "").trim();
         const currentSubcategory = String(first.dataset.subcategory || "").trim();
         if (selectedRows.length > 1) {
-          const ok = await askActionConfirm("Transfer Services", `Transfer ${selectedRows.length} selected services?`);
+          const ok = await askActionConfirm("Transfer Products", `Transfer ${selectedRows.length} selected products?`);
           if (!ok) return;
         }
         const picked = await askServiceTransfer(currentCategory, currentSubcategory);
@@ -6483,7 +6642,7 @@ if (servicesAdminActionTransferBtn) {
         exitServiceSelectionMode();
         await refreshServices();
         renderServiceAdmin();
-        showToast(`Transferred ${selectedRows.length} service(s).`);
+        showToast(`Transferred ${selectedRows.length} product(s).`);
       }
     } catch (error) {
       servicesAdminError.textContent = error.message;
@@ -6527,13 +6686,13 @@ if (servicesAdminActionToggleBtn) {
         if (mode.endsWith("_all")) {
           const scopedCount = getCurrentManagedServices().length;
           if (scopedCount > 1) {
-            const ok = await askActionConfirm(enable ? "Enable All Services" : "Disable All Services", `${enable ? "Enable" : "Disable"} ${scopedCount} services?`);
+            const ok = await askActionConfirm(enable ? "Enable All Products" : "Disable All Products", `${enable ? "Enable" : "Disable"} ${scopedCount} products?`);
             if (!ok) return;
           }
           await setAllServicesActive(enable);
           exitServiceSelectionMode();
           renderServiceAdmin();
-          showToast(`${enable ? "Enabled" : "Disabled"} all services in this view.`);
+          showToast(`${enable ? "Enabled" : "Disabled"} all products in this view.`);
           return;
         }
         const selectedIds = selectedServiceIdsInView();
@@ -6542,7 +6701,7 @@ if (servicesAdminActionToggleBtn) {
           : [selectedServiceRowElement()?.dataset.id || ""].filter(Boolean);
         if (ids.length === 0) return;
         if (ids.length > 1) {
-          const ok = await askActionConfirm(enable ? "Enable Services" : "Disable Services", `${enable ? "Enable" : "Disable"} ${ids.length} selected services?`);
+          const ok = await askActionConfirm(enable ? "Enable Products" : "Disable Products", `${enable ? "Enable" : "Disable"} ${ids.length} selected products?`);
           if (!ok) return;
         }
         for (const id of ids) {
@@ -6561,7 +6720,7 @@ if (servicesAdminActionToggleBtn) {
         exitServiceSelectionMode();
         await refreshServices();
         renderServiceAdmin();
-        showToast(`${enable ? "Enabled" : "Disabled"} ${ids.length} service(s).`);
+        showToast(`${enable ? "Enabled" : "Disabled"} ${ids.length} product(s).`);
       }
     } catch (error) {
       servicesAdminError.textContent = error.message;
@@ -6695,6 +6854,24 @@ attachDragReorder(servicesAdminList, ".service-list-item.draggable-item", async 
 document.addEventListener("keydown", (e) => {
   const key = String(e.key || "").toLowerCase();
 
+  if (!e.altKey && !e.ctrlKey && !e.metaKey && key === "f2") {
+    e.preventDefault();
+    const visibleScreen = document.querySelector(".app-screen:not(.hidden)");
+    const searchInput = visibleScreen?.querySelector("input[type='search'], input[type='text']");
+    if (searchInput) {
+      searchInput.focus();
+      if (typeof searchInput.select === "function") searchInput.select();
+    }
+    return;
+  }
+  if (!e.altKey && !e.ctrlKey && !e.metaKey && key === "f4") {
+    e.preventDefault();
+    if (state.currentScreen === "register" && checkoutPane?.classList.contains("hidden")) {
+      openCheckoutPopup();
+    }
+    return;
+  }
+
   if (e.altKey && key === "f") {
     e.preventDefault();
     toggleFullscreen();
@@ -6706,6 +6883,21 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (e.altKey && key === "k") {
+    e.preventDefault();
+    openShortcutsPanel();
+    return;
+  }
+  if (e.altKey && key === "h") {
+    e.preventDefault();
+    showToast("Hold Current Order is coming soon.");
+    return;
+  }
+  if (e.altKey && key === "r") {
+    e.preventDefault();
+    showToast("Recall Held Order is coming soon.");
+    return;
+  }
+  if (!e.altKey && !e.ctrlKey && !e.metaKey && key === "?" && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
     e.preventDefault();
     openShortcutsPanel();
     return;
@@ -6801,3 +6993,5 @@ async function init() {
 
 setInterval(updateClock, 1000);
 init();
+
+

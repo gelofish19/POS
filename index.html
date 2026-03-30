@@ -33,7 +33,7 @@
           </div>
           <div class="top-banner-clock">
             <strong id="top-banner-time">2:59:02 PM</strong>
-            <span id="top-banner-date">March 29, 2026</span>
+            <span id="top-banner-date">Sun, Mar 29, 2026</span>
           </div>
         </div>
         <div class="top-banner-right">
@@ -102,7 +102,7 @@
 
       <button class="sidebar-subtoggle" type="button" data-subtoggle-target="other-features" aria-expanded="false">Other Features</button>
       <div id="other-features" class="sidebar-submenu hidden">
-        <button class="sidebar-nav-item" type="button" data-route="services"><span class="sidebar-nav-icon"><svg viewBox="0 0 24 24" class="heroicon" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h12A2.25 2.25 0 0 1 20.25 7.5v9A2.25 2.25 0 0 1 18 18.75H6A2.25 2.25 0 0 1 3.75 16.5v-9Zm4.5 2.25h7.5m-7.5 3h7.5m-7.5 3h4.5"/></svg></span><span class="sidebar-nav-label">Services</span></button>
+        <button class="sidebar-nav-item" type="button" data-route="services"><span class="sidebar-nav-icon"><svg viewBox="0 0 24 24" class="heroicon" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h12A2.25 2.25 0 0 1 20.25 7.5v9A2.25 2.25 0 0 1 18 18.75H6A2.25 2.25 0 0 1 3.75 16.5v-9Zm4.5 2.25h7.5m-7.5 3h7.5m-7.5 3h4.5"/></svg></span><span class="sidebar-nav-label">Products</span></button>
         <button class="sidebar-nav-item" type="button" data-route="transactions"><span class="sidebar-nav-icon"><svg viewBox="0 0 24 24" class="heroicon" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h12A2.25 2.25 0 0 1 20.25 7.5v9A2.25 2.25 0 0 1 18 18.75H6A2.25 2.25 0 0 1 3.75 16.5v-9Zm4.5 2.25h7.5m-7.5 3h7.5m-7.5 3h4.5"/></svg></span><span class="sidebar-nav-label">Transactions</span></button>
         <button class="sidebar-nav-item" type="button" data-route="terminal"><span class="sidebar-nav-icon"><svg viewBox="0 0 24 24" class="heroicon" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h12A2.25 2.25 0 0 1 20.25 7.5v9A2.25 2.25 0 0 1 18 18.75H6A2.25 2.25 0 0 1 3.75 16.5v-9Zm4.5 2.25h7.5m-7.5 3h7.5m-7.5 3h4.5"/></svg></span><span class="sidebar-nav-label">Terminal</span></button>
         <button class="sidebar-nav-item" type="button" data-route="settlement"><span class="sidebar-nav-icon"><svg viewBox="0 0 24 24" class="heroicon" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h12A2.25 2.25 0 0 1 20.25 7.5v9A2.25 2.25 0 0 1 18 18.75H6A2.25 2.25 0 0 1 3.75 16.5v-9Zm4.5 2.25h7.5m-7.5 3h7.5m-7.5 3h4.5"/></svg></span><span class="sidebar-nav-label">Settlement</span></button>
@@ -146,12 +146,13 @@
           <div class="dashboard-hero-filter">
             <select id="dashboard-range-filter">
               <option value="all">All</option>
-              <option value="today">Today</option>
+              <option value="today" selected>Today</option>
               <option value="yesterday">Yesterday</option>
               <option value="last7">Last 7 days</option>
               <option value="month">This month</option>
               <option value="year">This year</option>
             </select>
+            <span id="dashboard-last-synced" class="dashboard-last-synced">Last synced: --</span>
           </div>
         </section>
 
@@ -163,37 +164,42 @@
               <span class="dashboard-summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" class="heroicon"><path stroke-linecap="round" stroke-linejoin="round" d="M15 5.25H9a2.25 2.25 0 0 0-2.25 2.25V9A2.25 2.25 0 0 0 9 11.25h4.5A2.25 2.25 0 0 1 15.75 13.5v1.5A2.25 2.25 0 0 1 13.5 17.25H9m3-12v12m-2.25-9h4.5"/></svg></span>
               <label>Total Sales</label>
               <strong id="dashboard-total-sales">PHP 0.00</strong>
+              <span id="dashboard-trend-sales" class="dashboard-trend-chip">No change vs previous</span>
             </article>
             <article class="list-box dashboard-summary-card">
               <span class="dashboard-summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" class="heroicon"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h7.5m-7.5 4.5h7.5m-7.5 4.5h7.5"/></svg></span>
               <label>Transactions</label>
               <strong id="dashboard-transaction-count">0 transaction(s)</strong>
+              <span id="dashboard-trend-transactions" class="dashboard-trend-chip">No change vs previous</span>
             </article>
             <article class="list-box dashboard-summary-card">
               <span class="dashboard-summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" class="heroicon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18V6m6 6H6"/></svg></span>
               <label>Cash In</label>
               <strong id="dashboard-cash-in-total">PHP 0.00</strong>
+              <span id="dashboard-trend-cash-in" class="dashboard-trend-chip">No change vs previous</span>
             </article>
             <article class="list-box dashboard-summary-card">
               <span class="dashboard-summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" class="heroicon"><path stroke-linecap="round" stroke-linejoin="round" d="M18 12H6"/></svg></span>
               <label>Cash Out</label>
               <strong id="dashboard-cash-out-total">PHP 0.00</strong>
+              <span id="dashboard-trend-cash-out" class="dashboard-trend-chip">No change vs previous</span>
             </article>
             <article class="list-box dashboard-summary-card">
               <span class="dashboard-summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" class="heroicon"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 5.25h-9l6 6-6 7.5h9"/></svg></span>
               <label>Net Cash Movement</label>
               <strong id="dashboard-net-cash">PHP 0.00</strong>
+              <span id="dashboard-trend-net" class="dashboard-trend-chip">No change vs previous</span>
             </article>
           </div>
 
           <div class="dashboard-reports-grid">
             <section class="list-box dashboard-reports-panel">
-              <h4>Sales by Service</h4>
+              <h4>Sales by Product</h4>
               <div class="sale-table-wrap reports-table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Service</th>
+                      <th>Product</th>
                       <th class="num-col">Qty</th>
                       <th class="num-col">Sales</th>
                     </tr>
@@ -201,21 +207,27 @@
                   <tbody id="dashboard-reports-service-body"></tbody>
                 </table>
               </div>
+              <div id="dashboard-action-service" class="dashboard-empty-action-row hidden">
+                <button id="dashboard-open-services" type="button" class="btn ghost small">Manage Products</button>
+              </div>
             </section>
 
             <section class="list-box dashboard-reports-panel">
-              <h4>Top Services</h4>
+              <h4>Top Products</h4>
               <div class="sale-table-wrap reports-table-wrap">
                 <table>
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Service</th>
+                      <th>Product</th>
                       <th class="num-col">Sales</th>
                     </tr>
                   </thead>
                   <tbody id="dashboard-reports-top-body"></tbody>
                 </table>
+              </div>
+              <div id="dashboard-action-top" class="dashboard-empty-action-row hidden">
+                <button id="dashboard-open-reports-top" type="button" class="btn ghost small">Open Reports</button>
               </div>
             </section>
 
@@ -232,6 +244,9 @@
                   </thead>
                   <tbody id="dashboard-reports-payment-body"></tbody>
                 </table>
+              </div>
+              <div id="dashboard-action-payment" class="dashboard-empty-action-row hidden">
+                <button id="dashboard-open-register" type="button" class="btn ghost small">Record Sale</button>
               </div>
             </section>
 
@@ -250,6 +265,9 @@
                   <tbody id="dashboard-reports-cash-body"></tbody>
                 </table>
               </div>
+              <div id="dashboard-action-cash" class="dashboard-empty-action-row hidden">
+                <button id="dashboard-open-cash" type="button" class="btn ghost small">Record Cash In / Out</button>
+              </div>
             </section>
           </div>
         </section>
@@ -262,7 +280,7 @@
           <h2>Register</h2>
           <div class="register-head-links">
             <button id="new-sale" type="button" class="text-action">New Sale</button>
-            <button id="manage-services" type="button" class="text-action">Services Management</button>
+            <button id="manage-services" type="button" class="text-action">Products Management</button>
           </div>
         </div>
       </header>
@@ -270,7 +288,7 @@
       <section class="register-body">
         <aside class="glass-panel catalog-pane">
           <div class="pane-head">
-            <h3>Services</h3>
+            <h3>Products</h3>
             <button id="services-back" type="button" class="btn ghost small">Back</button>
           </div>
           <div class="service-filters hidden">
@@ -323,7 +341,7 @@
               </colgroup>
               <thead>
                 <tr>
-                  <th>Service</th>
+                  <th>Product</th>
                   <th class="num-col">Qty</th>
                   <th class="num-col">Price</th>
                   <th class="num-col">Total</th>
@@ -388,7 +406,7 @@
 
         <section id="inventory-panel-category" class="inventory-view-panel">
           <div class="inventory-panel-actions">
-            <p class="inline-note">Manage top-level categories used in Inventory and Services taxonomy.</p>
+            <p class="inline-note">Manage top-level categories used in Inventory and Products taxonomy.</p>
             <button id="inventory-manage-categories" type="button" class="btn ghost small">Open Category Manager</button>
           </div>
         </section>
@@ -474,7 +492,7 @@
                     <th class="num-col">Profit / Unit</th>
                     <th class="num-col">Stock Value</th>
                     <th>Supplier</th>
-                    <th>Linked Service</th>
+                    <th>Linked Product</th>
                     <th>Status</th>
                     <th>Delete</th>
                   </tr>
@@ -520,7 +538,7 @@
         <input id="inventory-new-reorder" type="number" step="0.01" min="0" placeholder="Reorder level">
         <input id="inventory-new-supplier" type="text" placeholder="Supplier">
         <select id="inventory-new-linked-service">
-          <option value="">(No linked service)</option>
+          <option value="">(No linked product)</option>
         </select>
         <select id="inventory-new-active">
           <option value="1">Active</option>
@@ -601,7 +619,7 @@
   <dialog id="services-dialog" class="modal">
     <form method="dialog" class="glass-panel modal-card">
       <div class="services-admin-top">
-        <h3>Services Management</h3>
+        <h3>Products Management</h3>
         <div class="services-admin-top-actions">
           <div class="services-admin-action-box">
             <button id="services-admin-action-add" class="btn ghost small" type="button">Add</button>
@@ -635,12 +653,12 @@
       </div>
 
       <div id="section-services" class="manage-section services-section hidden">
-        <h4 class="manage-title services-manage-title">Services</h4>
+        <h4 class="manage-title services-manage-title">Products</h4>
         <div class="admin-add-panel">
           <div class="admin-new">
             <input id="new-service-category" type="text" placeholder="Category">
             <input id="new-service-subcategory" type="text" placeholder="Subcategory">
-            <input id="new-service-name" type="text" placeholder="Service name">
+            <input id="new-service-name" type="text" placeholder="Product name">
             <input id="new-service-price" type="number" min="1" step="0.01" placeholder="Price">
             <button id="add-service" class="btn ghost" type="button">Add</button>
           </div>
@@ -659,7 +677,7 @@
         <div class="admin-list-head" aria-hidden="true">
           <span>Category</span>
           <span>Subcategory</span>
-          <span>Service</span>
+          <span>Product</span>
           <span>Price</span>
           <span>Action</span>
         </div>
@@ -749,9 +767,9 @@
 
   <dialog id="service-edit-dialog" class="mini-modal">
     <div class="glass-panel mini-modal-card">
-      <h3>Edit Service</h3>
-      <label for="service-edit-name">Service name</label>
-      <input id="service-edit-name" type="text" placeholder="Service name">
+      <h3>Edit Product</h3>
+      <label for="service-edit-name">Product name</label>
+      <input id="service-edit-name" type="text" placeholder="Product name">
       <label for="service-edit-price">Price</label>
       <input id="service-edit-price" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
       <label for="service-edit-price-mode">Pricing mode</label>
@@ -795,7 +813,7 @@
 
   <dialog id="service-transfer-dialog" class="mini-modal">
     <div class="glass-panel mini-modal-card">
-      <h3>Transfer Service</h3>
+      <h3>Transfer Product</h3>
       <label for="service-transfer-category">Target category</label>
       <select id="service-transfer-category"></select>
       <label for="service-transfer-subcategory">Target subcategory</label>
@@ -866,12 +884,12 @@
       </div>
       <div class="reports-grid">
         <section class="list-box reports-panel">
-          <h4>Sales by Service</h4>
+          <h4>Sales by Product</h4>
           <div class="sale-table-wrap reports-table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Service</th>
+                  <th>Product</th>
                   <th class="num-col">Qty</th>
                   <th class="num-col">Sales</th>
                 </tr>
@@ -881,13 +899,13 @@
           </div>
         </section>
         <section class="list-box reports-panel">
-          <h4>Top Services</h4>
+          <h4>Top Products</h4>
           <div class="sale-table-wrap reports-table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Service</th>
+                  <th>Product</th>
                   <th class="num-col">Sales</th>
                 </tr>
               </thead>
@@ -1035,7 +1053,7 @@
 
   <dialog id="transaction-items-dialog" class="mini-modal">
     <div class="glass-panel mini-modal-card transaction-items-card">
-      <h3 id="transaction-items-title">Purchased Services</h3>
+      <h3 id="transaction-items-title">Purchased Products</h3>
       <div class="transaction-details-box">
         <div class="transaction-details-grid">
           <p class="inline-note"><strong>Date:</strong> <span id="tx-detail-date">-</span></p>
@@ -1052,7 +1070,7 @@
         <table>
           <thead>
             <tr>
-              <th>Service</th>
+              <th>Product</th>
               <th class="num-col">Qty</th>
               <th class="num-col">Price</th>
               <th class="num-col">Line Total</th>
@@ -1133,8 +1151,12 @@
       <button id="shortcuts-close" type="button" class="tool-panel-close" aria-label="Close shortcuts">&times;</button>
     </div>
     <div class="shortcuts-list">
-      <div class="shortcut-row"><span>Focus Search Bar</span><kbd>Ctrl+F</kbd></div>
+      <div class="shortcut-row"><span>Focus Search Bar</span><kbd>F2</kbd></div>
+      <div class="shortcut-row"><span>Open Checkout</span><kbd>F4</kbd></div>
       <div class="shortcut-row"><span>Close Modal / Cancel</span><kbd>Esc</kbd></div>
+      <div class="shortcut-row"><span>Add Product (on barcode match)</span><kbd>Enter</kbd></div>
+      <div class="shortcut-row"><span>Hold Current Order</span><kbd>Alt+H</kbd></div>
+      <div class="shortcut-row"><span>Recall Held Order</span><kbd>Alt+R</kbd></div>
       <div class="shortcut-row"><span>Open Calculator</span><kbd>Alt+D</kbd></div>
       <div class="shortcut-row"><span>Show Keyboard Shortcuts</span><kbd>Alt+K</kbd></div>
       <div class="shortcut-row"><span>Toggle Fullscreen</span><kbd>Alt+F</kbd></div>
@@ -1144,6 +1166,7 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
