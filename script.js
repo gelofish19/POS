@@ -1075,7 +1075,7 @@ function setSidebarCollapsed(collapsed, persist = true) {
 }
 
 function getScreenTitle(screen) {
-  if (screen === "register") return "Register";
+  if (screen === "register") return "POS Terminal";
   if (screen === "inventory") return "Inventory";
   return "Dashboard";
 }
