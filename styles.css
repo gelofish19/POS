@@ -874,7 +874,7 @@ button:focus-visible {
   width: 100%;
   min-height: calc(100vh - 32px);
   display: grid;
-  grid-template-columns: minmax(220px, 280px) 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
 }
 
@@ -946,6 +946,12 @@ button:focus-visible {
   grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr);
   gap: 14px;
   min-height: 0;
+}
+
+.terminal-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .catalog-pane,
