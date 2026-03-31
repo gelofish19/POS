@@ -276,17 +276,12 @@
 
     <section id="register-screen" class="register-screen app-screen hidden cashier-layout-v2">
       <section class="register-body cashier-layout">
-        <aside class="glass-panel cashier-rail-pane">
-          <div class="pane-head cashier-rail-head">
-            <h3>Categories</h3>
-            <button id="services-back" type="button" class="btn ghost small">Back</button>
-          </div>
-          <div id="service-category-box" class="list-box service-picker-box cashier-category-box">
+        <aside class="cashier-rail-pane">
+          <div id="service-category-box" class="service-picker-box cashier-category-box">
             <div id="service-category-list" class="simple-list cashier-category-list"></div>
           </div>
           <div class="cashier-rail-actions">
-            <button id="manage-services" type="button" class="btn ghost small">Inventory</button>
-            <button id="cash-movement" type="button" class="btn ghost small">Cash In / Out</button>
+            <button id="services-back" type="button" class="btn ghost small">Back</button>
           </div>
         </aside>
 
@@ -318,10 +313,22 @@
         </section>
 
         <section class="glass-panel sale-pane cashier-order-pane">
-          <div class="pane-head">
+          <div class="pane-head cashier-order-head">
             <h3>Current Order</h3>
+            <div class="cashier-order-head-actions">
+              <button id="cash-movement" type="button" class="btn ghost small">Cash In / Out</button>
+              <button id="clear-cart" type="button" class="btn ghost small">Clear All</button>
+            </div>
           </div>
-          <div class="sale-table-wrap">
+          <div class="order-customer-card">
+            <div class="order-customer-avatar" aria-hidden="true">W</div>
+            <div class="order-customer-meta">
+              <strong>Walk-in Customer</strong>
+              <span>Default</span>
+            </div>
+            <button id="order-customer-change" type="button" class="btn ghost small">Change</button>
+          </div>
+          <div class="sale-table-wrap order-cart-wrap">
             <table>
               <colgroup>
                 <col>
@@ -344,16 +351,47 @@
               </tbody>
             </table>
           </div>
-          <div class="sale-summary">
-            <div class="sale-summary-card">
-              <label>Total Quantity</label>
+          <div class="order-breakdown">
+            <div class="order-breakdown-row">
+              <span>Total Quantity</span>
               <strong id="sale-total-qty">0 item(s)</strong>
             </div>
-            <div class="sale-summary-card">
+            <div class="order-breakdown-row">
+              <span>Subtotal</span>
+              <strong id="order-subtotal">PHP 0.00</strong>
+            </div>
+            <div class="order-breakdown-row">
+              <span>Shipping</span>
+              <strong id="order-shipping">PHP 0.00</strong>
+            </div>
+            <div class="order-breakdown-row">
+              <span>Tax</span>
+              <strong id="order-tax">PHP 0.00</strong>
+            </div>
+            <div class="order-breakdown-row">
+              <span>Coupon</span>
+              <strong id="order-coupon">PHP 0.00</strong>
+            </div>
+            <div class="order-breakdown-row">
+              <span>Discount</span>
+              <strong id="order-discount">PHP 0.00</strong>
+            </div>
+            <div class="order-total-block">
+              <label>TOTAL PAYABLE</label>
+              <strong id="order-total-payable">PHP 0.00</strong>
+            </div>
+            <div class="order-total-fallback hidden">
               <label>Total Amount</label>
               <strong id="sale-total-amount">PHP 0.00</strong>
             </div>
-            <button id="new-sale" type="button" class="btn ghost sale-new-btn">New Sale</button>
+          </div>
+          <div class="order-action-grid">
+            <button id="order-hold" type="button" class="btn ghost small">Hold</button>
+            <button id="order-recall" type="button" class="btn ghost small">Recall</button>
+            <button id="order-void" type="button" class="btn ghost small">Void</button>
+            <button id="order-reset" type="button" class="btn ghost small">Reset</button>
+          </div>
+          <div class="sale-summary">
             <button id="open-checkout" type="button" class="btn primary sale-checkout-btn">Proceed to Pay</button>
           </div>
         </section>

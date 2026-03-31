@@ -138,6 +138,18 @@ const servicesBackBtn = document.getElementById("services-back");
 const saleBody = document.getElementById("sale-body");
 const saleTotalQty = document.getElementById("sale-total-qty");
 const saleTotalAmount = document.getElementById("sale-total-amount");
+const orderSubtotal = document.getElementById("order-subtotal");
+const orderShipping = document.getElementById("order-shipping");
+const orderTax = document.getElementById("order-tax");
+const orderCoupon = document.getElementById("order-coupon");
+const orderDiscount = document.getElementById("order-discount");
+const orderTotalPayable = document.getElementById("order-total-payable");
+const clearCartBtn = document.getElementById("clear-cart");
+const orderCustomerChangeBtn = document.getElementById("order-customer-change");
+const orderHoldBtn = document.getElementById("order-hold");
+const orderRecallBtn = document.getElementById("order-recall");
+const orderVoidBtn = document.getElementById("order-void");
+const orderResetBtn = document.getElementById("order-reset");
 const grandTotal = document.getElementById("grand-total");
 const grandQty = document.getElementById("grand-qty");
 const totalChange = document.getElementById("total-change");
@@ -3647,11 +3659,22 @@ function renderServices() {
 
 function renderCart() {
   const saleTable = saleBody ? saleBody.closest("table") : null;
+  const shipping = 0;
+  const tax = 0;
+  const coupon = 0;
+  const discount = 0;
+  const payable = cartTotal() + shipping + tax - coupon - discount;
   if (state.cart.length === 0) {
     saleBody.innerHTML = `<tr><td colspan="5" class="muted-cell"><div class="cart-empty-state"><span class="cart-empty-icon" aria-hidden="true">&#128722;</span><span>Cart is empty</span></div></td></tr>`;
     if (saleTable) saleTable.classList.add("cart-empty");
     saleTotalQty.textContent = "0 item(s)";
     saleTotalAmount.textContent = "PHP 0.00";
+    if (orderSubtotal) orderSubtotal.textContent = "PHP 0.00";
+    if (orderShipping) orderShipping.textContent = "PHP 0.00";
+    if (orderTax) orderTax.textContent = "PHP 0.00";
+    if (orderCoupon) orderCoupon.textContent = "PHP 0.00";
+    if (orderDiscount) orderDiscount.textContent = "PHP 0.00";
+    if (orderTotalPayable) orderTotalPayable.textContent = "PHP 0.00";
     grandTotal.textContent = "PHP 0.00";
     grandQty.textContent = "0 item(s)";
     totalChange.textContent = "PHP 0.00";
@@ -3679,6 +3702,12 @@ function renderCart() {
   const count = state.cart.reduce((n, i) => n + i.qty, 0);
   saleTotalQty.textContent = `${count} item(s)`;
   saleTotalAmount.textContent = peso.format(cartTotal());
+  if (orderSubtotal) orderSubtotal.textContent = peso.format(cartTotal());
+  if (orderShipping) orderShipping.textContent = peso.format(shipping);
+  if (orderTax) orderTax.textContent = peso.format(tax);
+  if (orderCoupon) orderCoupon.textContent = peso.format(coupon);
+  if (orderDiscount) orderDiscount.textContent = peso.format(discount);
+  if (orderTotalPayable) orderTotalPayable.textContent = peso.format(payable);
   grandQty.textContent = `${count} item(s)`;
   grandTotal.textContent = peso.format(cartTotal());
   if (["gcash", "bank"].includes(state.payment) && paymentReference.value.trim()) {
@@ -5634,7 +5663,7 @@ if (paymentQuick) {
 cashReceived.addEventListener("input", updateTotalChange);
 paymentReference.addEventListener("input", maybeAutofillReceivedFromReference);
 
-newSaleBtn.addEventListener("click", async () => {
+async function startNewSaleFlow() {
   const hasCurrentData = state.cart.length > 0 || state.saleLocked || Number(cashReceived.value || 0) > 0 || paymentReference.value.trim();
   const ok = await askActionConfirm(
     "Start New Sale",
@@ -5652,7 +5681,34 @@ newSaleBtn.addEventListener("click", async () => {
   checkoutError.textContent = "";
   renderCart();
   updateTotalChange();
-});
+}
+
+if (newSaleBtn) {
+  newSaleBtn.addEventListener("click", startNewSaleFlow);
+}
+
+if (clearCartBtn) {
+  clearCartBtn.addEventListener("click", () => {
+    startNewSaleFlow();
+  });
+}
+if (orderResetBtn) {
+  orderResetBtn.addEventListener("click", () => {
+    startNewSaleFlow();
+  });
+}
+if (orderCustomerChangeBtn) {
+  orderCustomerChangeBtn.addEventListener("click", () => showToast("Customer profiles will be added next."));
+}
+if (orderHoldBtn) {
+  orderHoldBtn.addEventListener("click", () => showToast("Hold action will be available soon."));
+}
+if (orderRecallBtn) {
+  orderRecallBtn.addEventListener("click", () => showToast("Recall action will be available soon."));
+}
+if (orderVoidBtn) {
+  orderVoidBtn.addEventListener("click", () => showToast("Void action will be available soon."));
+}
 
 completeSaleBtn.addEventListener("click", completeSale);
 openCheckoutBtn.addEventListener("click", openCheckoutPopup);
@@ -5712,9 +5768,11 @@ serviceTransferSave.addEventListener("click", () => resolveServiceTransfer({
 }));
 serviceTransferDialog.addEventListener("cancel", () => resolveServiceTransfer(null));
 
-manageServicesBtn.addEventListener("click", async () => {
-  await openInventoryScreen();
-});
+if (manageServicesBtn) {
+  manageServicesBtn.addEventListener("click", async () => {
+    await openInventoryScreen();
+  });
+}
 
 adminFilterCategory.addEventListener("change", () => {
   selectedManageCategory = adminFilterCategory.value || selectedManageCategory;
