@@ -3646,8 +3646,10 @@ function renderServices() {
 }
 
 function renderCart() {
+  const saleTable = saleBody ? saleBody.closest("table") : null;
   if (state.cart.length === 0) {
-    saleBody.innerHTML = `<tr><td colspan="5" class="muted-cell">No items in cart.</td></tr>`;
+    saleBody.innerHTML = `<tr><td colspan="5" class="muted-cell"><div class="cart-empty-state"><span class="cart-empty-icon" aria-hidden="true">&#128722;</span><span>Cart is empty</span></div></td></tr>`;
+    if (saleTable) saleTable.classList.add("cart-empty");
     saleTotalQty.textContent = "0 item(s)";
     saleTotalAmount.textContent = "PHP 0.00";
     grandTotal.textContent = "PHP 0.00";
@@ -3656,6 +3658,7 @@ function renderCart() {
     completeSaleBtn.disabled = false;
     return;
   }
+  if (saleTable) saleTable.classList.remove("cart-empty");
   saleBody.innerHTML = state.cart
     .map((item) => (
       `<tr>

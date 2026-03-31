@@ -1171,13 +1171,16 @@ button:focus-visible {
 #register-screen.cashier-layout-v2 .cashier-catalog-pane,
 #register-screen.cashier-layout-v2 .cashier-order-pane {
   min-height: 0;
-  padding: 14px;
+  padding: 16px;
 }
 
 #register-screen.cashier-layout-v2 .cashier-rail-pane {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 12px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 18px;
 }
 
 #register-screen.cashier-layout-v2 .cashier-rail-head {
@@ -1199,6 +1202,7 @@ button:focus-visible {
 
 #register-screen.cashier-layout-v2 .cashier-category-list {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1235,18 +1239,8 @@ button:focus-visible {
 
 #register-screen.cashier-layout-v2 .cashier-catalog-pane {
   display: grid;
-  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   gap: 10px;
-}
-
-#register-screen.cashier-layout-v2 .cashier-catalog-head {
-  align-items: center;
-}
-
-#register-screen.cashier-layout-v2 .cashier-catalog-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
 #register-screen.cashier-layout-v2 .cashier-search-row {
@@ -1299,27 +1293,79 @@ button:focus-visible {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 10px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 18px;
 }
 
 #register-screen.cashier-layout-v2 .cashier-order-pane .sale-summary {
   gap: 8px;
   border-top: 1px dashed rgba(25, 79, 125, 0.2);
   padding-top: 10px;
+  grid-template-columns: 1fr 1fr;
 }
 
 #register-screen.cashier-layout-v2 .cashier-order-pane .sale-summary-card {
-  min-height: 70px;
+  min-height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 2px 0;
+  box-shadow: none;
+}
+
+#register-screen.cashier-layout-v2 .cashier-order-pane .sale-summary-card label {
+  font-size: 0.79rem;
+}
+
+#register-screen.cashier-layout-v2 .cashier-order-pane .sale-summary-card strong {
+  font-size: 1.32rem;
+}
+
+#register-screen.cashier-layout-v2 .cashier-order-pane .sale-new-btn {
+  min-height: 46px;
+  grid-column: 1 / 2;
 }
 
 #register-screen.cashier-layout-v2 .cashier-order-pane .sale-checkout-btn {
   min-height: 52px;
-  grid-column: 1 / -1;
+  grid-column: 2 / -1;
 }
 
 #register-screen.cashier-layout-v2 .cashier-order-pane .sale-table-wrap {
   min-height: 260px;
   border-radius: 12px;
   padding: 0 6px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+#register-screen.cashier-layout-v2 .sale-table-wrap table.cart-empty thead {
+  display: none;
+}
+
+#register-screen.cashier-layout-v2 .sale-table-wrap table.cart-empty .muted-cell {
+  border-bottom: 0;
+  padding: 0;
+}
+
+.cart-empty-state {
+  min-height: 280px;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  color: #95a2b2;
+  font-size: 1rem;
+}
+
+.cart-empty-state .cart-empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 999px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  background: rgba(149, 162, 178, 0.12);
+  font-size: 2rem;
 }
 
 table {
@@ -3888,19 +3934,13 @@ body.dark-mode .muted-cell {
     grid-template-columns: 1fr;
   }
 
-  #register-screen.cashier-layout-v2 .cashier-catalog-actions {
-    width: 100%;
-  }
-
-  #register-screen.cashier-layout-v2 .cashier-catalog-actions .btn {
-    flex: 1 1 auto;
-  }
-
   #register-screen.cashier-layout-v2 .cashier-order-pane .sale-summary {
     grid-template-columns: 1fr;
   }
 
+  #register-screen.cashier-layout-v2 .cashier-order-pane .sale-new-btn,
   #register-screen.cashier-layout-v2 .cashier-order-pane .sale-checkout-btn {
+    grid-column: 1 / -1;
     min-height: 48px;
   }
 }
