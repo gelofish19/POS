@@ -133,6 +133,7 @@ const serviceSubcategoryList = document.getElementById("service-subcategory-list
 const serviceSubsubcategoryList = document.getElementById("service-subsubcategory-list");
 const serviceSubcategoryBox = document.getElementById("service-subcategory-box");
 const serviceSubsubcategoryBox = document.getElementById("service-subsubcategory-box");
+const terminalServiceSearch = document.getElementById("terminal-service-search");
 const servicesBackBtn = document.getElementById("services-back");
 const saleBody = document.getElementById("sale-body");
 const saleTotalQty = document.getElementById("sale-total-qty");
@@ -1269,6 +1270,11 @@ function setScreen(name) {
   }
   updateTopBannerQuickToolsVisibility();
   setSidebarDrawerOpen(false);
+  if (name === "register" && !isMobileSidebarViewport()) {
+    setSidebarCollapsed(true, false);
+  } else {
+    setSidebarCollapsed(loadSidebarCollapsed(), false);
+  }
   if (name !== "register") closeCheckoutPopup();
   updateTopBannerScrollState();
 }
@@ -3462,6 +3468,8 @@ async function logCashMovement(type) {
 
 function renderServices() {
   const allServices = state.services;
+  const useCashierLayoutV2 = registerScreen?.classList.contains("cashier-layout-v2");
+  const searchText = String(terminalServiceSearch?.value || "").trim().toLowerCase();
   const selectedCategory = serviceCategoryFilter.value;
   const selectedSubcategory = serviceSubcategoryFilter.value;
   const selectedSubsubcategory = serviceSubsubcategoryFilter.value;
@@ -3556,9 +3564,15 @@ function renderServices() {
   const isServicesStep = !!currentCategory && !!currentSubcategory && (!needsSubsubcategory || !!currentSubsubcategory);
 
   const serviceCategoryBox = document.getElementById("service-category-box");
-  serviceCategoryBox.classList.toggle("hidden", !isCategoryStep);
-  serviceSubcategoryBox.classList.toggle("hidden", !isSubcategoryStep);
-  serviceSubsubcategoryBox.classList.toggle("hidden", !isSubsubcategoryStep);
+  if (useCashierLayoutV2) {
+    serviceCategoryBox.classList.remove("hidden");
+    serviceSubcategoryBox.classList.toggle("hidden", !currentCategory);
+    serviceSubsubcategoryBox.classList.toggle("hidden", !needsSubsubcategory || !currentSubcategory);
+  } else {
+    serviceCategoryBox.classList.toggle("hidden", !isCategoryStep);
+    serviceSubcategoryBox.classList.toggle("hidden", !isSubcategoryStep);
+    serviceSubsubcategoryBox.classList.toggle("hidden", !isSubsubcategoryStep);
+  }
 
   serviceSubcategoryList.innerHTML = !currentCategory
     ? ""
@@ -3580,7 +3594,7 @@ function renderServices() {
         </div>`
       )).join("");
 
-  if (isServicesStep) {
+  if (!useCashierLayoutV2 && isServicesStep) {
     serviceCategoryBox.classList.add("hidden");
     serviceSubcategoryBox.classList.add("hidden");
     serviceSubsubcategoryBox.classList.add("hidden");
@@ -3599,7 +3613,7 @@ function renderServices() {
     return;
   }
 
-  const filtered = allServices.filter((s) => {
+  let filtered = allServices.filter((s) => {
     const sub = normalizedSubcategoryFor(s.category, s.subcategory, s.name);
     const subSub = normalizedSubsubcategoryFor(s.category, s.subcategory, s.subSubcategory, s.name);
     const requiresSubSub = subSubcategories.length > 0;
@@ -3610,6 +3624,9 @@ function renderServices() {
     }
     return normalizeCategory(s.category) === serviceCategoryFilter.value && sub === serviceSubcategoryFilter.value;
   });
+  if (searchText) {
+    filtered = filtered.filter((s) => String(s.name || "").toLowerCase().includes(searchText));
+  }
 
   if (filtered.length === 0) {
     serviceChips.innerHTML = `<p class="service-empty">No offers in this selection.</p>`;
@@ -5525,6 +5542,9 @@ serviceSubcategoryFilter.addEventListener("change", () => {
   renderServices();
 });
 serviceSubsubcategoryFilter.addEventListener("change", renderServices);
+if (terminalServiceSearch) {
+  terminalServiceSearch.addEventListener("input", renderServices);
+}
 
 serviceCategoryList.addEventListener("click", (e) => {
   const btn = e.target.closest(".list-chip[data-service-cat]");

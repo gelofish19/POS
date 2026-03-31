@@ -1155,6 +1155,177 @@ button:focus-visible {
   padding: 0 8px;
 }
 
+#register-screen.cashier-layout-v2 {
+  display: block;
+  min-height: calc(100vh - 165px);
+}
+
+#register-screen.cashier-layout-v2 .register-body.cashier-layout {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) minmax(320px, 0.95fr);
+  gap: 14px;
+  min-height: calc(100vh - 175px);
+}
+
+#register-screen.cashier-layout-v2 .cashier-rail-pane,
+#register-screen.cashier-layout-v2 .cashier-catalog-pane,
+#register-screen.cashier-layout-v2 .cashier-order-pane {
+  min-height: 0;
+  padding: 14px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-rail-pane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-rail-head {
+  justify-content: center;
+}
+
+#register-screen.cashier-layout-v2 .cashier-rail-head h3 {
+  display: none;
+}
+
+#register-screen.cashier-layout-v2 .cashier-rail-head .btn {
+  width: 100%;
+}
+
+#register-screen.cashier-layout-v2 .cashier-category-box,
+#register-screen.cashier-layout-v2 .cashier-category-box .simple-list {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+  min-height: 0;
+}
+
+#register-screen.cashier-layout-v2 .cashier-category-list {
+  display: grid;
+  gap: 8px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-category-list .list-chip {
+  min-height: 64px;
+  width: 100%;
+  padding: 8px 6px;
+  border-radius: 14px;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.71rem;
+  line-height: 1.05;
+  position: relative;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+#register-screen.cashier-layout-v2 .cashier-category-list .list-chip::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(25, 79, 125, 0.35);
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#register-screen.cashier-layout-v2 .cashier-category-list .list-item.active .list-chip {
+  border-color: rgba(29, 138, 204, 0.48);
+  background: linear-gradient(180deg, rgba(219, 239, 255, 0.95), rgba(238, 247, 255, 0.88));
+  color: #0f4f79;
+}
+
+#register-screen.cashier-layout-v2 .cashier-rail-actions {
+  display: grid;
+  gap: 8px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-rail-actions .btn {
+  min-height: 36px;
+  padding: 0 8px;
+  font-size: 0.74rem;
+}
+
+#register-screen.cashier-layout-v2 .cashier-catalog-pane {
+  display: grid;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-catalog-head {
+  align-items: center;
+}
+
+#register-screen.cashier-layout-v2 .cashier-catalog-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#register-screen.cashier-layout-v2 .cashier-search-row {
+  display: grid;
+  gap: 8px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-search-row input {
+  min-height: 44px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-level-rows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-level-rows .simple-list {
+  min-height: 56px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-level-rows .list-chip {
+  min-height: 50px;
+  font-size: 0.84rem;
+}
+
+#register-screen.cashier-layout-v2 .service-grid {
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 10px;
+  overflow: auto;
+  min-height: 0;
+}
+
+#register-screen.cashier-layout-v2 .service-btn {
+  min-height: 96px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-order-pane {
+  position: sticky;
+  top: 12px;
+  align-self: start;
+  max-height: calc(100dvh - 185px);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-order-pane .sale-summary {
+  gap: 8px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-order-pane .sale-summary-card {
+  min-height: 70px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-order-pane .sale-checkout-btn {
+  min-height: 70px;
+}
+
+#register-screen.cashier-layout-v2 .cashier-order-pane .sale-table-wrap {
+  min-height: 240px;
+  padding: 0 6px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -3677,6 +3848,64 @@ body.dark-mode .muted-cell {
   .inventory-panel-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+@media (max-width: 1280px) {
+  #register-screen.cashier-layout-v2 .register-body.cashier-layout {
+    grid-template-columns: 88px minmax(0, 1fr) minmax(300px, 0.85fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  #register-screen.cashier-layout-v2 .register-body.cashier-layout {
+    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    min-height: auto;
+  }
+
+  #register-screen.cashier-layout-v2 .cashier-order-pane {
+    grid-column: 1 / -1;
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 760px) {
+  #register-screen.cashier-layout-v2 .register-body.cashier-layout {
+    grid-template-columns: 1fr;
+  }
+
+  #register-screen.cashier-layout-v2 .cashier-rail-pane {
+    grid-template-rows: auto auto auto;
+  }
+
+  #register-screen.cashier-layout-v2 .cashier-category-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #register-screen.cashier-layout-v2 .cashier-category-list .list-chip {
+    min-height: 52px;
+  }
+
+  #register-screen.cashier-layout-v2 .cashier-level-rows {
+    grid-template-columns: 1fr;
+  }
+
+  #register-screen.cashier-layout-v2 .cashier-catalog-actions {
+    width: 100%;
+  }
+
+  #register-screen.cashier-layout-v2 .cashier-catalog-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  #register-screen.cashier-layout-v2 .cashier-order-pane .sale-summary {
+    grid-template-columns: 1fr;
+  }
+
+  #register-screen.cashier-layout-v2 .cashier-order-pane .sale-checkout-btn {
+    min-height: 48px;
   }
 }
 

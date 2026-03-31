@@ -274,16 +274,28 @@
       </div>
     </section>
 
-    <section id="register-screen" class="register-screen app-screen hidden">
-      <section class="register-body">
-        <aside class="glass-panel catalog-pane">
-          <div class="pane-head">
-            <h3>Products</h3>
+    <section id="register-screen" class="register-screen app-screen hidden cashier-layout-v2">
+      <section class="register-body cashier-layout">
+        <aside class="glass-panel cashier-rail-pane">
+          <div class="pane-head cashier-rail-head">
+            <h3>Categories</h3>
             <button id="services-back" type="button" class="btn ghost small">Back</button>
           </div>
-          <div class="terminal-quick-actions">
-            <button id="new-sale" type="button" class="btn ghost small">New Sale</button>
-            <button id="manage-services" type="button" class="btn ghost small">Manage Products in Inventory</button>
+          <div id="service-category-box" class="list-box service-picker-box cashier-category-box">
+            <div id="service-category-list" class="simple-list cashier-category-list"></div>
+          </div>
+          <div class="cashier-rail-actions">
+            <button id="manage-services" type="button" class="btn ghost small">Inventory</button>
+            <button id="cash-movement" type="button" class="btn ghost small">Cash In / Out</button>
+          </div>
+        </aside>
+
+        <section class="glass-panel catalog-pane cashier-catalog-pane">
+          <div class="pane-head cashier-catalog-head">
+            <h3>Products</h3>
+            <div class="cashier-catalog-actions">
+              <button id="new-sale" type="button" class="btn ghost small">New Sale</button>
+            </div>
           </div>
           <div class="service-filters hidden">
             <select id="service-category-filter">
@@ -296,20 +308,22 @@
               <option value="">Select child subcategory</option>
             </select>
           </div>
+          <div class="cashier-search-row">
+            <input id="terminal-service-search" type="search" placeholder="Search products/services">
+          </div>
           <div id="service-breadcrumb" class="service-breadcrumb"></div>
-          <div id="service-category-box" class="list-box service-picker-box">
-            <div id="service-category-list" class="simple-list"></div>
-          </div>
-          <div id="service-subcategory-box" class="list-box service-picker-box hidden">
-            <div id="service-subcategory-list" class="simple-list"></div>
-          </div>
-          <div id="service-subsubcategory-box" class="list-box service-picker-box hidden">
-            <div id="service-subsubcategory-list" class="simple-list"></div>
+          <div class="cashier-level-rows">
+            <div id="service-subcategory-box" class="list-box service-picker-box hidden">
+              <div id="service-subcategory-list" class="simple-list"></div>
+            </div>
+            <div id="service-subsubcategory-box" class="list-box service-picker-box hidden">
+              <div id="service-subsubcategory-list" class="simple-list"></div>
+            </div>
           </div>
           <div id="service-chips" class="service-grid"></div>
-        </aside>
+        </section>
 
-        <section class="glass-panel sale-pane">
+        <section class="glass-panel sale-pane cashier-order-pane">
           <div class="pane-head">
             <h3>Current Sale</h3>
           </div>
