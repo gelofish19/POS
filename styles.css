@@ -1164,10 +1164,11 @@ button:focus-visible {
 
 #register-screen.cashier-layout-v2 .register-body.cashier-layout {
   display: grid;
-  grid-template-columns: minmax(88px, 106px) minmax(0, 1fr) minmax(350px, 0.95fr);
+  grid-template-columns: minmax(0, 1fr) minmax(350px, 0.95fr);
   gap: 12px;
   min-height: calc(100dvh - var(--banner-height));
   align-items: stretch;
+  padding-left: 118px;
 }
 
 #register-screen.cashier-layout-v2 .cashier-rail-pane,
@@ -1180,19 +1181,24 @@ button:focus-visible {
 #register-screen.cashier-layout-v2 .cashier-rail-pane {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   gap: 8px;
-  align-self: stretch;
-  position: sticky;
-  top: -25px;
-  min-height: calc(100dvh - var(--banner-height) + 25px);
-  height: calc(100dvh - var(--banner-height) + 25px);
+  align-self: start;
+  position: fixed;
+  top: var(--banner-height);
+  bottom: 0;
+  left: 64px;
+  width: 106px;
+  min-height: 0;
+  height: auto;
   max-height: none;
-  padding: 0;
+  padding: 10px 6px 58px;
   background: rgba(221, 234, 244, 0.9);
   border: 0;
   border-radius: 0;
   box-shadow: none;
   overflow: hidden;
+  z-index: 46;
 }
 
 #register-screen.cashier-layout-v2 .cashier-rail-head {
@@ -1207,9 +1213,14 @@ button:focus-visible {
 #register-screen.cashier-layout-v2 .cashier-category-box {
   border: 0;
   box-shadow: none;
-  background: transparent;
-  padding: 0 6px 0;
+  background: transparent !important;
+  padding: 8px 0 0;
   min-height: 0;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  border-radius: 0;
 }
 
 #register-screen.cashier-layout-v2 .cashier-category-box .simple-list {
@@ -1221,9 +1232,9 @@ button:focus-visible {
   grid-template-columns: 1fr;
   gap: 8px;
   align-content: start;
-  overflow: auto;
+  overflow: hidden;
   min-height: 0;
-  flex: 1;
+  flex: 0 0 auto;
   padding-right: 3px;
 }
 
@@ -1283,8 +1294,12 @@ button:focus-visible {
 #register-screen.cashier-layout-v2 .cashier-rail-actions {
   display: grid;
   gap: 6px;
-  margin-top: auto;
-  padding: 8px;
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  margin-top: 0;
+  padding: 0;
 }
 
 #register-screen.cashier-layout-v2 .cashier-rail-actions .btn {
@@ -1300,6 +1315,12 @@ button:focus-visible {
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
   gap: 10px;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 #register-screen.cashier-layout-v2 .cashier-search-row {
@@ -1350,7 +1371,7 @@ button:focus-visible {
 #register-screen.cashier-layout-v2 .service-grid {
   grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
   gap: 10px;
-  overflow: auto;
+  overflow: visible;
   min-height: 0;
 }
 
@@ -1360,15 +1381,19 @@ button:focus-visible {
 
 #register-screen.cashier-layout-v2 .cashier-order-pane {
   position: sticky;
-  top: 12px;
-  align-self: start;
-  max-height: calc(100dvh - 185px);
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  top: 0;
+  align-self: stretch;
+  min-height: calc(100dvh - var(--banner-height));
+  height: calc(100dvh - var(--banner-height));
+  max-height: none;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  background: var(--panel-strong);
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  background: rgba(221, 234, 244, 0.9);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
 }
 
 #register-screen.cashier-layout-v2 .cashier-order-head {
@@ -1487,6 +1512,7 @@ button:focus-visible {
   border-radius: 12px;
   padding: 0 6px;
   background: rgba(255, 255, 255, 0.78);
+  overflow: hidden;
 }
 
 #register-screen.cashier-layout-v2 .sale-table-wrap table.cart-empty thead {
@@ -4045,7 +4071,8 @@ body.dark-mode .muted-cell {
 
 @media (max-width: 1280px) {
   #register-screen.cashier-layout-v2 .register-body.cashier-layout {
-    grid-template-columns: minmax(84px, 98px) minmax(0, 1fr) minmax(320px, 0.85fr);
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
+    padding-left: 104px;
   }
 }
 
@@ -4056,10 +4083,11 @@ body.dark-mode .muted-cell {
   }
 
   #register-screen.cashier-layout-v2 .register-body.cashier-layout {
-    grid-template-columns: minmax(80px, 92px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto;
     min-height: calc(100dvh - var(--banner-height) + 25px);
     align-items: start;
+    padding-left: 104px;
   }
 
   #register-screen.cashier-layout-v2 .cashier-rail-pane {
@@ -4068,14 +4096,17 @@ body.dark-mode .muted-cell {
     bottom: 0;
     left: 64px;
     width: 92px;
-    min-height: auto;
+    min-height: 0;
     height: auto;
     z-index: 46;
   }
 
   #register-screen.cashier-layout-v2 .cashier-order-pane {
-    grid-column: 1 / -1;
-    position: static;
+    grid-column: 1;
+    position: sticky;
+    top: 0;
+    min-height: calc(100dvh - var(--banner-height));
+    height: calc(100dvh - var(--banner-height));
     max-height: none;
   }
 }
@@ -4088,14 +4119,18 @@ body.dark-mode .muted-cell {
 
   #register-screen.cashier-layout-v2 .register-body.cashier-layout {
     grid-template-columns: 1fr;
+    padding-left: 0;
   }
 
   #register-screen.cashier-layout-v2 .cashier-rail-pane {
-    position: static;
-    max-height: none;
-    height: auto;
+    position: fixed;
+    top: var(--banner-height);
+    bottom: 0;
+    left: 64px;
+    width: 92px;
     min-height: 0;
-    width: auto;
+    height: auto;
+    max-height: none;
   }
 
   #register-screen.cashier-layout-v2 .cashier-category-list {
